@@ -1,121 +1,44 @@
-# n8n Workflow Collection
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/assets/header-dark.svg">
+  <img alt="n8n-workflow-collection — Redacted n8n workflows for Lark, Bitable and socials." src="./docs/assets/header-light.svg" width="100%">
+</picture>
 
-English | [简体中文](./README.zh-CN.md)
+**Import-ready, redacted n8n workflows: Lark/Feishu bot messages into Bitable records and PRD drafts, plus social-media metrics tracking via Apify.** English | [简体中文](./README.zh-CN.md)
 
-Reusable redacted n8n workflows for Feishu/Lark automation, Bitable workflows, and social media tracking with DeepSeek and Apify.
+## Quickstart
 
-## What's included
+1. In n8n, go to **Workflows → Import from file** and pick a `workflows/**/*.redacted.json`.
+2. Replace every `{{PLACEHOLDER}}` (credentials, table IDs, webhook IDs) with your own.
+3. Rebind credentials in n8n, test on a non-production Bitable, then enable.
 
-### Lark / Feishu
-- [`workflows/Lark/FeishuBotBitable/`](./workflows/Lark/FeishuBotBitable/README.md)
-- Turn Feishu bot messages into structured Bitable records and generated PRD content.
+Requires n8n, the Lark/Feishu Open Platform with Bitable, DeepSeek (for the bot flow) and Apify (for the social flows, needs actor access and quota).
 
-### SocialMediaTracker
-- [`workflows/SocialMediaTracker/Create/`](./workflows/SocialMediaTracker/Create/README.md)
-- Create a monthly tracking table and import social media post data in bulk.
-
-- [`workflows/SocialMediaTracker/Update/`](./workflows/SocialMediaTracker/Update/README.md)
-- Refresh existing records for Instagram, X, YouTube, and Facebook.
-
-### Standalone platform workflows
-- [`workflows/Instagram/`](./workflows/Instagram/README.md)
-- [`workflows/X/`](./workflows/X/README.md)
-- [`workflows/Youtube/`](./workflows/Youtube/README.md)
-- [`workflows/Facebook/`](./workflows/Facebook/README.md)
-
-These are split-out platform-specific workflows for simpler reuse and maintenance.
-
-## At a glance
+## Workflows
 
 | Workflow | Trigger | Services | Nodes | What it automates |
 |---|---|---|---|---|
-| [Lark / FeishuBotBitable](./workflows/Lark/FeishuBotBitable/README.md) | Webhook (Feishu bot) | Lark Open Platform, Bitable, DeepSeek | 12 | Chat message → structured Bitable record + generated PRD draft |
-| [SocialMediaTracker / Create](./workflows/SocialMediaTracker/Create/README.md) | Manual | Apify, Bitable | 32 | Creates the monthly tracking table and bulk-imports posts from all platforms |
-| [SocialMediaTracker / Update](./workflows/SocialMediaTracker/Update/README.md) | Manual | Apify, Bitable | 44 | Refreshes metrics for Instagram, X, YouTube and Facebook records |
-| [Instagram](./workflows/Instagram/README.md) · [X](./workflows/X/README.md) · [YouTube](./workflows/Youtube/README.md) · [Facebook](./workflows/Facebook/README.md) | Manual | Apify, Bitable | 17–22 | Per-platform Create / Update split-outs for simpler reuse |
+| [Lark / FeishuBotBitable](./workflows/Lark/FeishuBotBitable/README.md) | Webhook (Feishu bot) | Lark, Bitable, DeepSeek | 12 | Chat message → structured Bitable record + PRD draft |
+| [SocialMediaTracker / Create](./workflows/SocialMediaTracker/Create/README.md) | Manual | Apify, Bitable | 32 | Monthly tracking table + bulk import across platforms |
+| [SocialMediaTracker / Update](./workflows/SocialMediaTracker/Update/README.md) | Manual | Apify, Bitable | 44 | Refresh metrics for Instagram, X, YouTube, Facebook |
+| [Instagram](./workflows/Instagram/README.md) · [X](./workflows/X/README.md) · [YouTube](./workflows/Youtube/README.md) · [Facebook](./workflows/Facebook/README.md) | Manual | Apify, Bitable | 17–22 | Per-platform Create / Update split-outs |
 
-## Redaction check
-
-Every workflow must contain placeholders (`{{LIKE_THIS}}`) instead of credentials, tokens, tenant links, webhook URLs or emails. Before committing a new export:
-
-```bash
-npm test                  # tests for the checker itself
-npm run check:redaction   # scans workflows/**/*.json; exits 1 and prints rule + JSON path (never the value)
-```
-
-## Requirements
-
-Most workflows expect access to:
-- n8n
-- Feishu / Lark Open Platform
-- Feishu Bitable
-- DeepSeek API
-- Apify
-
-> The social media workflows rely on Apify actors. Importing the workflow alone is not enough if your Apify account does not have the required access, quota, or subscription.
-
-## Quick start
-
-1. Import the target `.redacted.json` file into n8n.
-2. Replace placeholders with your own credentials, IDs, and URLs.
-3. Rebind credentials, webhooks, table IDs, and platform parameters in n8n.
-4. Test in a non-production environment first.
-5. Enable or schedule the workflow only after validation.
-
-## Repository structure
+## How it works
 
 ```text
-workflows/
-  Lark/
-    FeishuBotBitable/
-  SocialMediaTracker/
-    Create/
-    Update/
-  Instagram/
-    Create/
-    Update/
-  X/
-    Create/
-    Update/
-  Youtube/
-    Create/
-    Update/
-  Facebook/
-    Create/
-    Update/
+trigger (webhook | manual) ─▶ fetch (Lark API | Apify actor) ─▶ normalise (Code/Set) ─▶ write (Bitable) ─▶ notify
 ```
 
-## Security note
+Each platform has a **Create** flow (build the table, first import) and an **Update** flow (refresh existing rows), so either can be re-run independently.
 
-All exported workflows in this repository are redacted before sharing. Removed or replaced values include:
-- Feishu / Lark app credentials
-- DeepSeek API keys
-- Webhook paths and IDs
-- Bitable app, table, and record identifiers
-- Apify credential references
-- Internal profile URLs and business-specific addresses
+## Testing & redaction
 
-If you add new workflows, keep the same redaction standard before committing exports.
+```bash
+npm test                  # tests for the redaction checker
+npm run check:redaction   # scans workflows/**/*.json, prints rule + JSON path only, never the value
+```
 
-## Documentation map
+Run the check before committing any new export. Only `{{UPPER_SNAKE}}` placeholders are allowed where credentials, tokens, tenant links, webhook IDs or emails would go.
 
-- [Lark / Feishu workflow](./workflows/Lark/FeishuBotBitable/README.md)
-- [SocialMediaTracker overview](./workflows/SocialMediaTracker/README.md)
-- [SocialMediaTracker / Create](./workflows/SocialMediaTracker/Create/README.md)
-- [SocialMediaTracker / Update](./workflows/SocialMediaTracker/Update/README.md)
-- [Instagram overview](./workflows/Instagram/README.md)
-- [Instagram / Create](./workflows/Instagram/Create/README.md)
-- [Instagram / Update](./workflows/Instagram/Update/README.md)
-- [X overview](./workflows/X/README.md)
-- [X / Create](./workflows/X/Create/README.md)
-- [X / Update](./workflows/X/Update/README.md)
-- [Youtube overview](./workflows/Youtube/README.md)
-- [Youtube / Create](./workflows/Youtube/Create/README.md)
-- [Youtube / Update](./workflows/Youtube/Update/README.md)
-- [Facebook overview](./workflows/Facebook/README.md)
-- [Facebook / Create](./workflows/Facebook/Create/README.md)
-- [Facebook / Update](./workflows/Facebook/Update/README.md)
+## License
 
-## Notes
-
-This repository is best used as a reusable workflow reference and public export collection. Most workflows still need field mapping, table design, credentials, and business rules adjusted for your own environment.
+No license chosen yet, so all rights are reserved by default.

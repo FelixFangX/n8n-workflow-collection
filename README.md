@@ -41,4 +41,4 @@ Run the check before committing any new export. Only `{{UPPER_SNAKE}}` placehold
 
 ## License
 
-No license chosen yet, so all rights are reserved by default.
+[MIT](./LICENSE)

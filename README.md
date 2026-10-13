@@ -25,6 +25,24 @@ Reusable redacted n8n workflows for Feishu/Lark automation, Bitable workflows, a
 
 These are split-out platform-specific workflows for simpler reuse and maintenance.
 
+## At a glance
+
+| Workflow | Trigger | Services | Nodes | What it automates |
+|---|---|---|---|---|
+| [Lark / FeishuBotBitable](./workflows/Lark/FeishuBotBitable/README.md) | Webhook (Feishu bot) | Lark Open Platform, Bitable, DeepSeek | 12 | Chat message → structured Bitable record + generated PRD draft |
+| [SocialMediaTracker / Create](./workflows/SocialMediaTracker/Create/README.md) | Manual | Apify, Bitable | 32 | Creates the monthly tracking table and bulk-imports posts from all platforms |
+| [SocialMediaTracker / Update](./workflows/SocialMediaTracker/Update/README.md) | Manual | Apify, Bitable | 44 | Refreshes metrics for Instagram, X, YouTube and Facebook records |
+| [Instagram](./workflows/Instagram/README.md) · [X](./workflows/X/README.md) · [YouTube](./workflows/Youtube/README.md) · [Facebook](./workflows/Facebook/README.md) | Manual | Apify, Bitable | 17–22 | Per-platform Create / Update split-outs for simpler reuse |
+
+## Redaction check
+
+Every workflow must contain placeholders (`{{LIKE_THIS}}`) instead of credentials, tokens, tenant links, webhook URLs or emails. Before committing a new export:
+
+```bash
+npm test                  # tests for the checker itself
+npm run check:redaction   # scans workflows/**/*.json; exits 1 and prints rule + JSON path (never the value)
+```
+
 ## Requirements
 
 Most workflows expect access to:

@@ -4,7 +4,7 @@
   "type": "module",
   "engines": { "node": ">=20" },
   "scripts": {
-    "test": "node --test tests/",
+    "test": "node --test tests/*.test.mjs",
     "check:redaction": "node scripts/check-redaction.mjs workflows"
   }
 }

@@ -22,6 +22,20 @@ Requires n8n, the Lark/Feishu Open Platform with Bitable, DeepSeek (for the bot 
 | [SocialMediaTracker / Update](./workflows/SocialMediaTracker/Update/README.md) | Manual | Apify, Bitable | 44 | Refresh metrics for Instagram, X, YouTube, Facebook |
 | [Instagram](./workflows/Instagram/README.md) · [X](./workflows/X/README.md) · [YouTube](./workflows/Youtube/README.md) · [Facebook](./workflows/Facebook/README.md) | Manual | Apify, Bitable | 17–22 | Per-platform Create / Update split-outs |
 
+## For agents (n8n MCP)
+
+Each workflow has a `workflow.manifest.json` next to its export ([schema](./schema/manifest.schema.json)): a description, the trigger node, input and output as JSON Schema, side effects, and a ready `execute_workflow` call. List them with `npm run manifests -- --json`.
+
+To let an agent (Claude, Cursor, Codex…) run them through [n8n's instance-level MCP server](https://docs.n8n.io/advanced-ai/accessing-n8n-mcp-server/):
+
+1. Import and configure the workflow (Quickstart above), then publish it.
+2. **Settings → Instance-level MCP → Enable MCP access**, then connect your client (OAuth or API key; the server URL ends in `/mcp-server/http`).
+3. Open the workflow, then **… → Settings → Available in MCP**. The exports ship with this **off**.
+4. **… → Edit description**: paste the manifest's `description` so `search_workflows` finds it.
+5. The agent calls `execute_workflow` with `mcp.executeWorkflow` from the manifest (webhook workflows pass `inputs.webhookData.body` matching `input`), then `get_execution` for the result.
+
+Every manifest sets `requiresConfirmation: true` because all of these workflows write to Bitable, reply in chat or spend Apify/DeepSeek quota. Agents should ask before running them.
+
 ## How it works
 
 ```text
@@ -35,6 +49,7 @@ Each platform has a **Create** flow (build the table, first import) and an **Upd
 ```bash
 npm test                  # tests for the redaction checker
 npm run check:redaction   # scans workflows/**/*.json, prints rule + JSON path only, never the value
+npm run check:manifests   # every export has a manifest that matches it (name, trigger node and type)
 ```
 
 Run the check before committing any new export. Only `{{UPPER_SNAKE}}` placeholders are allowed where credentials, tokens, tenant links, webhook IDs or emails would go.

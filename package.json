@@ -2,9 +2,13 @@
   "name": "n8n-workflow-collection",
   "private": true,
   "type": "module",
-  "engines": { "node": ">=20" },
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "test": "node --test tests/*.test.mjs",
-    "check:redaction": "node scripts/check-redaction.mjs workflows"
+    "check:redaction": "node scripts/check-redaction.mjs workflows",
+    "check:manifests": "node scripts/manifests.mjs check",
+    "manifests": "node scripts/manifests.mjs list"
   }
 }

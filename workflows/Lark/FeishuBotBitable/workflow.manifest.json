@@ -2,11 +2,11 @@
   "$schema": "../../../schema/manifest.schema.json",
   "id": "lark-requirement-to-bitable",
   "workflowFile": "feishu-bot-bitable-workflow.redacted.json",
-  "workflowName": "@Hex 机器人需求智能创建助手",
+  "workflowName": "@Hex Bot: Smart Requirement Creator",
   "description": "Turn a Lark/Feishu chat message describing a requirement into a structured Bitable record with an AI-written PRD draft, then reply to the sender with a card.",
   "trigger": {
     "type": "webhook",
-    "node": "接收飞书消息",
+    "node": "Receive Lark Message",
     "method": "POST"
   },
   "input": {
@@ -46,7 +46,7 @@
       },
       "record_id": {
         "type": "string",
-        "description": "New Bitable record id (in the 新增多维表格记录 node output)."
+        "description": "New Bitable record id (in the Create Bitable Record node output)."
       }
     }
   },
@@ -59,7 +59,7 @@
   "mcp": {
     "executeWorkflow": {
       "workflowId": "<id from search_workflows>",
-      "triggerNodeName": "接收飞书消息",
+      "triggerNodeName": "Receive Lark Message",
       "inputs": {
         "type": "webhook",
         "webhookData": {

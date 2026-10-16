@@ -26,7 +26,7 @@
 
 ## 导入后需要替换的配置
 
-先处理 `配置参数` 节点：
+先处理 `Config` 节点：
 - `{{BITABLE_APP_TOKEN}}`
 - `{{BITABLE_TABLE_ID}}`
 - `{{FEISHU_APP_ID}}`

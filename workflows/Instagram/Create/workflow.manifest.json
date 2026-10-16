@@ -6,11 +6,11 @@
   "description": "Import Instagram posts listed in Bitable: fetch post data with Apify and write new rows.",
   "trigger": {
     "type": "manual",
-    "node": "手动触发"
+    "node": "Manual Trigger"
   },
   "input": {
     "type": "object",
-    "description": "No runtime input. Configure the 配置参数 node (Bitable app token, table id, Lark app id/secret) after import.",
+    "description": "No runtime input. Configure the Config node (Bitable app token, table id, Lark app id/secret) after import.",
     "properties": {},
     "additionalProperties": false
   },
@@ -32,7 +32,7 @@
   "mcp": {
     "executeWorkflow": {
       "workflowId": "<id from search_workflows>",
-      "triggerNodeName": "手动触发",
+      "triggerNodeName": "Manual Trigger",
       "executionMode": "manual"
     }
   }

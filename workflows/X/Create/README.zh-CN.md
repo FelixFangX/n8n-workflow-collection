@@ -22,7 +22,7 @@
 - `{{FEISHU_APP_SECRET}}`
 - `{{X_PROFILE_URL}}`
 
-建议把 `配置参数` 节点中的 `profileUrls` 只保留 X / Twitter 链接，当前独立版已经收窄为单个平台输入。
+建议把 `Config` 节点中的 `profileUrls` 只保留 X / Twitter 链接，当前独立版已经收窄为单个平台输入。
 
 ## 说明
 

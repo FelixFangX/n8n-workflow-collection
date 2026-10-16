@@ -28,7 +28,7 @@
 
 ## 导入后要改的内容
 
-重点看 `配置参数` 节点，里面的占位符都需要替换：
+重点看 `Config` 节点，里面的占位符都需要替换：
 - `{{BITABLE_APP_TOKEN}}`
 - `{{BITABLE_TEMPLATE_TABLE_ID}}`
 - `{{DEEPSEEK_API_KEY}}`

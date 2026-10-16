@@ -24,6 +24,6 @@ Corresponding file: `youtube-create.redacted.json`
 
 ## Notes
 
-The `配置参数` node in this standalone version is already narrowed to YouTube-only input.
+The `Config` node in this standalone version is already narrowed to YouTube-only input.
 
 After import, confirm whether you want to collect channel, video, or Shorts data and adjust the Apify input accordingly.

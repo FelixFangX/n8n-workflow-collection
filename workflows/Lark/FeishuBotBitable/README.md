@@ -44,13 +44,13 @@ The public export replaces these values with placeholders:
 - `{{BITABLE_BASE_URL}}`
 
 Recommended nodes to check first:
-- `接收飞书消息`
-- `获取飞书 Tenant Token`
-- `获取多维表格字段列表`
-- `调用 DeepSeek 填表`
-- `调用 DeepSeek 生成 PRD`
-- `新增多维表格记录`
-- `回复飞书消息`
+- `Receive Lark Message`
+- `Get Lark Tenant Token`
+- `Get Bitable Field List`
+- `DeepSeek: Fill Form`
+- `DeepSeek: Generate PRD`
+- `Create Bitable Record`
+- `Reply to Lark Message`
 
 ## Inputs and outputs
 

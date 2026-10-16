@@ -30,7 +30,7 @@
 - `{{FEISHU_APP_SECRET}}`
 - `{{INSTAGRAM_PROFILE_URL}}`
 
-建议把 `配置参数` 节点中的 `profileUrls` 只保留 Instagram 链接，当前独立版已经收窄为单个平台输入。
+建议把 `Config` 节点中的 `profileUrls` 只保留 Instagram 链接，当前独立版已经收窄为单个平台输入。
 
 ## 主流程
 

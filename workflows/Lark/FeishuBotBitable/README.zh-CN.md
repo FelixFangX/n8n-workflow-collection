@@ -44,13 +44,13 @@
 - `{{BITABLE_BASE_URL}}`
 
 建议优先检查这些节点：
-- `接收飞书消息`
-- `获取飞书 Tenant Token`
-- `获取多维表格字段列表`
-- `调用 DeepSeek 填表`
-- `调用 DeepSeek 生成 PRD`
-- `新增多维表格记录`
-- `回复飞书消息`
+- `Receive Lark Message`
+- `Get Lark Tenant Token`
+- `Get Bitable Field List`
+- `DeepSeek: Fill Form`
+- `DeepSeek: Generate PRD`
+- `Create Bitable Record`
+- `Reply to Lark Message`
 
 ## 输入与输出
 

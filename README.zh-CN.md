@@ -1,27 +1,36 @@
 # n8n Workflow Collection
 
-[English](./README.md) | 简体中文
+[English（国际版 / global edition）](./README.md) | 简体中文（国内版）
 
 这是一个整理后的 n8n 工作流仓库，主要包含经过脱敏处理的 Feishu / Lark、Bitable，以及社媒数据采集与更新相关 workflow。
+
+仓库分为两个版本，内容和结构一一对应：
+
+| 版本 | 目录 | 语言 | 服务 |
+|---|---|---|---|
+| **国内版**（本文档） | [`workflows/cn/`](./workflows/cn/README.md) | 中文节点名、注释、提示词和卡片文案 | 飞书 `open.feishu.cn`、DeepSeek |
+| 国际版 | [`workflows/global/`](./workflows/global/README.md) | 英文 | Lark `open.larksuite.com`、OpenAI |
+
+两个版本使用的多维表格字段名不同，详见 [`workflows/cn/README.md`](./workflows/cn/README.md#字段名约定)。
 
 ## 包含内容
 
 ### Lark / 飞书
-- [`workflows/Lark/FeishuBotBitable/`](./workflows/Lark/FeishuBotBitable/README.zh-CN.md)
+- [`workflows/cn/Lark/FeishuBotBitable/`](./workflows/cn/Lark/FeishuBotBitable/README.md)
 - 将飞书机器人消息转换为结构化 Bitable 记录，并生成 PRD 内容。
 
 ### SocialMediaTracker
-- [`workflows/SocialMediaTracker/Create/`](./workflows/SocialMediaTracker/Create/README.zh-CN.md)
+- [`workflows/cn/SocialMediaTracker/Create/`](./workflows/cn/SocialMediaTracker/Create/README.md)
 - 创建当月数据表，并批量导入社媒帖子数据。
 
-- [`workflows/SocialMediaTracker/Update/`](./workflows/SocialMediaTracker/Update/README.zh-CN.md)
+- [`workflows/cn/SocialMediaTracker/Update/`](./workflows/cn/SocialMediaTracker/Update/README.md)
 - 更新 Instagram、X、YouTube、Facebook 的已有记录。
 
 ### 平台独立工作流
-- [`workflows/Instagram/`](./workflows/Instagram/README.zh-CN.md)
-- [`workflows/X/`](./workflows/X/README.zh-CN.md)
-- [`workflows/Youtube/`](./workflows/Youtube/README.zh-CN.md)
-- [`workflows/Facebook/`](./workflows/Facebook/README.zh-CN.md)
+- [`workflows/cn/Instagram/`](./workflows/cn/Instagram/README.md)
+- [`workflows/cn/X/`](./workflows/cn/X/README.md)
+- [`workflows/cn/Youtube/`](./workflows/cn/Youtube/README.md)
+- [`workflows/cn/Facebook/`](./workflows/cn/Facebook/README.md)
 
 这些目录提供拆分后的单平台 workflow，便于单独复用和维护。
 
@@ -48,23 +57,14 @@
 
 ```text
 workflows/
-  Lark/
-    FeishuBotBitable/
-  SocialMediaTracker/
-    Create/
-    Update/
-  Instagram/
-    Create/
-    Update/
-  X/
-    Create/
-    Update/
-  Youtube/
-    Create/
-    Update/
-  Facebook/
-    Create/
-    Update/
+  global/                # 国际版（英文），结构与 cn/ 完全相同
+  cn/                    # 国内版（中文）
+    Lark/FeishuBotBitable/
+    SocialMediaTracker/{Create,Update}/
+    Instagram/{Create,Update}/
+    X/{Create,Update}/
+    Youtube/{Create,Update}/
+    Facebook/{Create,Update}/
 ```
 
 ## 安全说明
@@ -81,22 +81,22 @@ workflows/
 
 ## 文档入口
 
-- [Lark / 飞书工作流](./workflows/Lark/FeishuBotBitable/README.zh-CN.md)
-- [SocialMediaTracker 总览](./workflows/SocialMediaTracker/README.zh-CN.md)
-- [SocialMediaTracker / Create](./workflows/SocialMediaTracker/Create/README.zh-CN.md)
-- [SocialMediaTracker / Update](./workflows/SocialMediaTracker/Update/README.zh-CN.md)
-- [Instagram 总览](./workflows/Instagram/README.zh-CN.md)
-- [Instagram / Create](./workflows/Instagram/Create/README.zh-CN.md)
-- [Instagram / Update](./workflows/Instagram/Update/README.zh-CN.md)
-- [X 总览](./workflows/X/README.zh-CN.md)
-- [X / Create](./workflows/X/Create/README.zh-CN.md)
-- [X / Update](./workflows/X/Update/README.zh-CN.md)
-- [Youtube 总览](./workflows/Youtube/README.zh-CN.md)
-- [Youtube / Create](./workflows/Youtube/Create/README.zh-CN.md)
-- [Youtube / Update](./workflows/Youtube/Update/README.zh-CN.md)
-- [Facebook 总览](./workflows/Facebook/README.zh-CN.md)
-- [Facebook / Create](./workflows/Facebook/Create/README.zh-CN.md)
-- [Facebook / Update](./workflows/Facebook/Update/README.zh-CN.md)
+- [Lark / 飞书工作流](./workflows/cn/Lark/FeishuBotBitable/README.md)
+- [SocialMediaTracker 总览](./workflows/cn/SocialMediaTracker/README.md)
+- [SocialMediaTracker / Create](./workflows/cn/SocialMediaTracker/Create/README.md)
+- [SocialMediaTracker / Update](./workflows/cn/SocialMediaTracker/Update/README.md)
+- [Instagram 总览](./workflows/cn/Instagram/README.md)
+- [Instagram / Create](./workflows/cn/Instagram/Create/README.md)
+- [Instagram / Update](./workflows/cn/Instagram/Update/README.md)
+- [X 总览](./workflows/cn/X/README.md)
+- [X / Create](./workflows/cn/X/Create/README.md)
+- [X / Update](./workflows/cn/X/Update/README.md)
+- [Youtube 总览](./workflows/cn/Youtube/README.md)
+- [Youtube / Create](./workflows/cn/Youtube/Create/README.md)
+- [Youtube / Update](./workflows/cn/Youtube/Update/README.md)
+- [Facebook 总览](./workflows/cn/Facebook/README.md)
+- [Facebook / Create](./workflows/cn/Facebook/Create/README.md)
+- [Facebook / Update](./workflows/cn/Facebook/Update/README.md)
 
 ## 说明
 

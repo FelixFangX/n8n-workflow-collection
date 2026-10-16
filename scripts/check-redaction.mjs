@@ -13,6 +13,7 @@ const RULES = [
   ["lark-app-id", /\bcli_[a-z0-9]{12,}/],
   ["lark-tenant-url", /https?:\/\/(?!open\.)[a-z0-9-]+\.(feishu\.cn|larksuite\.com)\/(base|wiki|docx|sheets)\/[A-Za-z0-9]{10,}/],
   ["webhook-url", /https?:\/\/[^\s"']*\/hook\/(?!\{\{)[A-Za-z0-9-]{8,}/],
+  ["im-webhook-token", /(dingtalk\.com\/robot\/send\?access_token=|qyapi\.weixin\.qq\.com\/cgi-bin\/webhook\/send\?key=)(?!\{\{)[A-Za-z0-9-]{8,}/],
   ["email", /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/],
 ];
 

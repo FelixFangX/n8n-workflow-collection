@@ -5,12 +5,14 @@ import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 
 const TRIGGER_TYPES = { webhook: /\.webhook$/, manual: /\.manualTrigger$/, schedule: /\.scheduleTrigger$/, chat: /chatTrigger$/, form: /formTrigger$/ };
-const REQUIRED = ["id", "workflowFile", "workflowName", "description", "trigger", "input", "output", "sideEffects", "requiresConfirmation", "mcp"];
+const EDITIONS = ["global", "cn"];
+const REQUIRED = ["id", "edition", "workflowFile", "workflowName", "description", "trigger", "input", "output", "sideEffects", "requiresConfirmation", "mcp"];
 
 /** @returns {string[]} problems; empty when the manifest matches the workflow export */
 export function validateManifest(m, workflow) {
   const errs = [];
   for (const k of REQUIRED) if (m[k] === undefined) errs.push(`missing ${k}`);
+  if (m.edition !== undefined && !EDITIONS.includes(m.edition)) errs.push(`edition must be one of ${EDITIONS.join(", ")}`);
   if (m.workflowName !== workflow.name) errs.push(`workflowName "${m.workflowName}" != export name "${workflow.name}"`);
   if (typeof m.description === "string" && (m.description.length === 0 || m.description.length > 300)) errs.push("description must be 1-300 chars");
   if (!Array.isArray(m.sideEffects) || m.sideEffects.length === 0) errs.push("sideEffects must list at least one effect");
@@ -47,6 +49,8 @@ export async function loadManifests(dir = "workflows") {
     } catch {
       errors = [`workflowFile ${manifest.workflowFile} not readable`];
     }
+    const folder = path.relative(dir, p).split(path.sep)[0];
+    if (EDITIONS.includes(folder) && manifest.edition !== folder) errors.push(`edition "${manifest.edition}" doesn't match folder workflows/${folder}`);
     out.push({ path: p, manifest, errors });
   }
   for await (const p of files(dir, (n) => n.endsWith(".redacted.json"))) {
@@ -65,6 +69,6 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     process.exit(bad.length ? 1 : 0);
   }
   if (rest.includes("--json")) console.log(JSON.stringify(all.map((m) => ({ ...m.manifest, path: path.dirname(m.path), valid: !m.errors.length })), null, 2));
-  else for (const m of all) console.log(`${m.manifest.id.padEnd(30)} ${m.manifest.trigger?.type ?? "?"}  ${m.manifest.description ?? ""}`);
+  else for (const m of all) console.log(`${m.manifest.id.padEnd(34)} ${(m.manifest.edition ?? "?").padEnd(6)} ${m.manifest.trigger?.type ?? "?"}  ${m.manifest.description ?? ""}`);
   process.exit(bad.length ? 1 : 0);
 }

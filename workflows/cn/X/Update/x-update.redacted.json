@@ -1,0 +1,546 @@
+{
+  "name": "X Update Workflow",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -320,
+        2192
+      ],
+      "id": "{{NODE_OR_CONDITION_ID}}",
+      "name": "手动触发"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "{{NODE_OR_CONDITION_ID}}",
+              "name": "bitableToken",
+              "value": "{{BITABLE_APP_TOKEN}}",
+              "type": "string"
+            },
+            {
+              "id": "{{NODE_OR_CONDITION_ID}}",
+              "name": "sheetId",
+              "value": "{{BITABLE_TABLE_ID}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -96,
+        2192
+      ],
+      "id": "{{NODE_OR_CONDITION_ID}}",
+      "name": "配置参数"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/internal",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ app_id: '{{FEISHU_APP_ID}}', app_secret: '{{FEISHU_APP_SECRET}}' }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        128,
+        2192
+      ],
+      "id": "{{NODE_OR_CONDITION_ID}}",
+      "name": "获取飞书 Tenant Token"
+    },
+    {
+      "parameters": {
+        "url": "=https://open.feishu.cn/open-apis/bitable/v1/apps/{{ $('配置参数').item.json.bitableToken }}/tables/{{ $('配置参数').item.json.sheetId }}/fields?page_size=100",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $json.tenant_access_token }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        352,
+        2096
+      ],
+      "id": "{{NODE_OR_CONDITION_ID}}",
+      "name": "获取字段列表"
+    },
+    {
+      "parameters": {
+        "url": "=https://open.feishu.cn/open-apis/bitable/v1/apps/{{ $('配置参数').item.json.bitableToken }}/tables/{{ $('配置参数').item.json.sheetId }}/records?page_size=500",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('获取飞书 Tenant Token').item.json.tenant_access_token }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        576,
+        2288
+      ],
+      "id": "{{NODE_OR_CONDITION_ID}}",
+      "name": "获取所有记录"
+    },
+    {
+      "parameters": {
+        "jsCode": "const fields = $json?.data?.items || [];\nconst config = $('配置参数').item.json;\nconst token = $('获取飞书 Tenant Token').item.json.tenant_access_token;\n\nconst platformField = fields.find(f => \n  f.field_name.toUpperCase().includes('SOCIAL MEDIA PLATFORM') || \n  f.field_name.toUpperCase().includes('PLATFORM') ||\n  f.field_name.includes('平台')\n);\n\nconst linkField = fields.find(f => \n  f.field_name.toUpperCase().includes('POSTS LINK') || \n  f.field_name.toUpperCase().includes('LINK') ||\n  f.field_name.includes('链接') ||\n  f.field_name.includes('URL')\n);\n\nconst fieldConfig = {\n  platformFieldName: platformField?.field_name || 'SOCIAL MEDIA PLATFORM',\n  linkFieldName: linkField?.field_name || 'POSTS Link',\n  allFields: fields.map(f => ({\n    name: f.field_name,\n    type: f.type,\n    ui_type: f.ui_type,\n    field_id: f.field_id\n  }))\n};\n\nreturn {\n  json: {\n    ...config,\n    tenant_access_token: token,\n    fieldConfig\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        576,
+        2096
+      ],
+      "id": "{{NODE_OR_CONDITION_ID}}",
+      "name": "处理字段配置"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 从当前节点获取记录数据\nconst records = $json?.data?.items || [];\n\n// 从上游节点获取字段配置\nlet prevData = {};\ntry {\n  prevData = $('处理字段配置').first().json || {};\n} catch (e) {\n  prevData = {};\n}\n\nconst platformField = prevData.fieldConfig?.platformFieldName || 'SOCIAL MEDIA PLATFORM';\nconst linkField = prevData.fieldConfig?.linkFieldName || 'POSTS Link';\nconst tenantToken = prevData.tenant_access_token || '';\nconst bitableToken = prevData.bitableToken || '';\nconst sheetId = prevData.sheetId || '';\n\nconst platformGroups = {\n  INSTAGRAM: [],\n  X: [],\n  FACEBOOK: [],\n  YOUTUBE: [],\n  DISCORD: [],\n  UNKNOWN: []\n};\n\nfor (const record of records) {\n  const fields = record.fields || {};\n  const platform = String(fields[platformField] || '').toUpperCase().trim();\n  const link = fields[linkField] || '';\n  \n  const recordData = {\n    record_id: record.record_id,\n    platform: platform,\n    link: link,\n    fields: fields\n  };\n  \n  if (platform.includes('INSTAGRAM') || platform.includes('INS')) {\n    platformGroups.INSTAGRAM.push(recordData);\n  } else if (platform.includes('X') || platform.includes('TWITTER')) {\n    platformGroups.X.push(recordData);\n  } else if (platform.includes('YOUTUBE') || platform.includes('YT')) {\n    platformGroups.YOUTUBE.push(recordData);\n  } else if (platform.includes('FACEBOOK') || platform.includes('FB') || platform.includes('facebook')) {\n    platformGroups.FACEBOOK.push(recordData);\n  } else if (platform.includes('DISCORD')) {\n    platformGroups.DISCORD.push(recordData);\n  } else {\n    platformGroups.UNKNOWN.push(recordData);\n  }\n}\n\nreturn {\n  json: {\n    bitableToken,\n    sheetId,\n    tenant_access_token: tenantToken,\n    fieldConfig: prevData.fieldConfig,\n    platformGroups,\n    totalRecords: records.length\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        800,
+        2192
+      ],
+      "id": "{{NODE_OR_CONDITION_ID}}",
+      "name": "按平台分组记录"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $('按平台分组记录').item.json;\nconst platformGroups = data.platformGroups;\n\nconst results = [];\n\nif (platformGroups.INSTAGRAM.length > 0) {\n  results.push({\n    json: {\n      platform: 'INSTAGRAM',\n      records: platformGroups.INSTAGRAM,\n      bitableToken: data.bitableToken,\n      sheetId: data.sheetId,\n      tenant_access_token: data.tenant_access_token,\n      fieldConfig: data.fieldConfig\n    }\n  });\n}\n\nif (platformGroups.X.length > 0) {\n  results.push({\n    json: {\n      platform: 'X',\n      records: platformGroups.X,\n      bitableToken: data.bitableToken,\n      sheetId: data.sheetId,\n      tenant_access_token: data.tenant_access_token,\n      fieldConfig: data.fieldConfig\n    }\n  });\n}\n\nif (platformGroups.YOUTUBE.length > 0) {\n  results.push({\n    json: {\n      platform: 'YOUTUBE',\n      records: platformGroups.YOUTUBE,\n      bitableToken: data.bitableToken,\n      sheetId: data.sheetId,\n      tenant_access_token: data.tenant_access_token,\n      fieldConfig: data.fieldConfig\n    }\n  });\n}\n\nif (platformGroups.FACEBOOK.length > 0) {\n  results.push({\n    json: {\n      platform: 'FACEBOOK',\n      records: platformGroups.FACEBOOK,\n      bitableToken: data.bitableToken,\n      sheetId: data.sheetId,\n      tenant_access_token: data.tenant_access_token,\n      fieldConfig: data.fieldConfig\n    }\n  });\n}\n\nif (platformGroups.DISCORD.length > 0) {\n  results.push({\n    json: {\n      platform: 'DISCORD',\n      records: platformGroups.DISCORD,\n      bitableToken: data.bitableToken,\n      sheetId: data.sheetId,\n      tenant_access_token: data.tenant_access_token,\n      fieldConfig: data.fieldConfig\n    }\n  });\n}\n\nreturn results;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1024,
+        2192
+      ],
+      "id": "{{NODE_OR_CONDITION_ID}}",
+      "name": "拆分到各平台分支"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "cond-1",
+              "leftValue": "={{ $json.platform }}",
+              "rightValue": "X",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1248,
+        2096
+      ],
+      "id": "{{NODE_OR_CONDITION_ID}}",
+      "name": "If X/Twitter"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1472,
+        2096
+      ],
+      "id": "{{NODE_OR_CONDITION_ID}}",
+      "name": "X/Twitter 分支"
+    },
+    {
+      "parameters": {
+        "jsCode": "const inputData = $json;\nconst records = inputData.records || [];\n\nconst processedRecords = records.map(record => ({\n  record_id: record.record_id,\n  link: record.link\n}));\n\nconst apifyConfig = {\n  startUrls: records.map(r => r.link.link).filter(link => link)\n};\n\nreturn {\n  json: {\n    platform: inputData.platform,\n    processedRecords,\n    apifyConfig,\n    bitableToken: inputData.bitableToken,\n    sheetId: inputData.sheetId,\n    tenant_access_token: inputData.tenant_access_token,\n    fieldConfig: inputData.fieldConfig\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1696,
+        2096
+      ],
+      "id": "{{NODE_OR_CONDITION_ID}}",
+      "name": "X/Twitter 数据处理"
+    },
+    {
+      "parameters": {
+        "operation": "Run actor and get dataset",
+        "actorId": {
+          "__rl": true,
+          "value": "nfp1fpt5gUlBwPcor",
+          "mode": "list",
+          "cachedResultName": "Twitter (X.com) Scraper Unlimited: No Limits (apidojo/twitter-scraper-lite)",
+          "cachedResultUrl": "{{APIFY_X_ACTOR_URL}}"
+        },
+        "customBody": "={{ JSON.stringify({ includeSearchTerms: false, maxItems: 100, sort: 'Latest', startUrls: $json.apifyConfig.startUrls }) }}"
+      },
+      "type": "@apify/n8n-nodes-apify.apify",
+      "typeVersion": 1,
+      "position": [
+        1920,
+        2096
+      ],
+      "id": "{{NODE_OR_CONDITION_ID}}",
+      "name": "X / Twitter Scraper",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "credentials": {
+        "apifyApi": {
+          "id": "{{APIFY_CREDENTIAL_ID}}",
+          "name": "{{APIFY_CREDENTIAL_NAME}}"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const scraperData = $('X / Twitter Scraper').all().map(i => i.json);\nconst upstreamData = $('X/Twitter 数据处理').first().json;\nconst records = upstreamData.processedRecords || [];\nconst allFields = upstreamData.fieldConfig?.allFields || [];\n\n// 辅助函数：模糊匹配字段项\nfunction findFieldConfig(targetName, allFields) {\n  const targetUpper = targetName.toUpperCase();\n  const match = allFields.find(f => f.name.toUpperCase().includes(targetUpper));\n  return match ? match : null;\n}\n\n// 获取实际字段名\nconst likesFieldConfig = findFieldConfig('LIKES', allFields);\nconst likesField = likesFieldConfig ? likesFieldConfig.name : null;\nconst commentsFieldConfig = findFieldConfig('COMMENTS', allFields);\nconst commentsField = commentsFieldConfig ? commentsFieldConfig.name : null;\nconst impressionsFieldConfig = findFieldConfig('IMPRESSIONS', allFields)\nconst impressionsField = impressionsFieldConfig ? impressionsFieldConfig.name : null;\nconst sharesFieldConfig = findFieldConfig('SHARES', allFields);\nconst sharesField = sharesFieldConfig ? sharesFieldConfig.name : null;\nconst tagsFieldConfig = findFieldConfig('TAGS', allFields);\nconst tagsField = tagsFieldConfig ? tagsFieldConfig.name : null\n\nconst results = [];\nfor (const scraped of scraperData) {\n  const scraperUrl = String(scraped.url || '');\n  if (!scraperUrl) continue;\n\n  const matched = records.find(r => {\n    const originalLink = String((r.link && r.link.link) || r.link || '');\n    return originalLink && originalLink.includes(scraperUrl);\n  });\n  if (!matched) continue;\n\n  const fields = {};\n  if (scraped.likeCount !== undefined && likesField) {\n    const isNumber = likesFieldConfig.ui_type === \"Number\";\n    fields[likesField] = isNumber ? scraped.likeCount : scraped.likeCount.toString();\n  }\n  if (scraped.replyCount !== undefined && commentsField) {\n    const isNumber = commentsFieldConfig.ui_type === \"Number\";\n    fields[commentsField] = isNumber ? scraped.replyCount : scraped.replyCount.toString();\n  } \nif (scraped.viewCount !== undefined && impressionsField) {\n    const isNumber = impressionsFieldConfig.ui_type === \"Number\";\n    const value = scraped.viewCount !== undefined ? scraped.viewCount : null;\n    fields[impressionsField] = isNumber ? value : value.toString();\n}\n\nif (scraped.retweetCount !== undefined && sharesField) {\n    const isNumber = sharesFieldConfig.ui_type === \"Number\";\n    fields[sharesField] = isNumber ? scraped.retweetCount : scraped.retweetCount.toString();\n}\n  if (scraped.entities.hashtags !== undefined && tagsField && tagsFieldConfig !==null) {\n    fields[tagsField] = {\n      link: scraped.twitterUrl,\n      text: scraped.entities.hashtags.map(item => `#${item.text}`).join(' ')\n    }\n  }\n\n  results.push({\n    json: {\n      bitableToken: upstreamData.bitableToken,\n      sheetId: upstreamData.sheetId,\n      tenant_access_token: upstreamData.tenant_access_token,\n      recordId: matched.record_id,\n      fields: fields\n    }\n  });\n}\n\nif (results.length === 0) {\n  return [{ json: { _skip: true, message: 'X/Twitter: 无匹配记录需要更新' } }];\n}\nreturn results;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2144,
+        2096
+      ],
+      "id": "{{NODE_OR_CONDITION_ID}}",
+      "name": "X/Twitter 匹配并构建更新"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "skip-check-x",
+              "leftValue": "={{ !$json.length && !$json._skip }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        2368,
+        2096
+      ],
+      "id": "{{NODE_OR_CONDITION_ID}}",
+      "name": "X/Twitter 有数据?"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        2592,
+        2016
+      ],
+      "id": "{{NODE_OR_CONDITION_ID}}",
+      "name": "X/Twitter 循环项"
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "=https://open.feishu.cn/open-apis/bitable/v1/apps/{{ $json.bitableToken }}/tables/{{ $json.sheetId }}/records/{{ $json.recordId }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $json.tenant_access_token }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ fields: $json.fields }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2816,
+        1920
+      ],
+      "id": "{{NODE_OR_CONDITION_ID}}",
+      "name": "X/Twitter 更新飞书记录"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const ok = $json?.code === 0 || $json?.msg === 'success';\nreturn {\n  success: ok,\n  recordId: $json?.data?.record?.record_id || null,\n  raw: $json\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3040,
+        1920
+      ],
+      "id": "{{NODE_OR_CONDITION_ID}}",
+      "name": "X/Twitter 处理结果"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "手动触发": {
+      "main": [
+        [
+          {
+            "node": "配置参数",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "配置参数": {
+      "main": [
+        [
+          {
+            "node": "获取飞书 Tenant Token",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "获取飞书 Tenant Token": {
+      "main": [
+        [
+          {
+            "node": "获取字段列表",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "获取所有记录",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "获取字段列表": {
+      "main": [
+        [
+          {
+            "node": "处理字段配置",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "获取所有记录": {
+      "main": [
+        [
+          {
+            "node": "按平台分组记录",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "处理字段配置": {
+      "main": [
+        [
+          {
+            "node": "按平台分组记录",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "按平台分组记录": {
+      "main": [
+        [
+          {
+            "node": "拆分到各平台分支",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "拆分到各平台分支": {
+      "main": [
+        [
+          {
+            "node": "If X/Twitter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If X/Twitter": {
+      "main": [
+        [
+          {
+            "node": "X/Twitter 分支",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "X/Twitter 分支": {
+      "main": [
+        [
+          {
+            "node": "X/Twitter 数据处理",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "X/Twitter 数据处理": {
+      "main": [
+        [
+          {
+            "node": "X / Twitter Scraper",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "X / Twitter Scraper": {
+      "main": [
+        [
+          {
+            "node": "X/Twitter 匹配并构建更新",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "X/Twitter 匹配并构建更新": {
+      "main": [
+        [
+          {
+            "node": "X/Twitter 有数据?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "X/Twitter 有数据?": {
+      "main": [
+        [
+          {
+            "node": "X/Twitter 循环项",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "X/Twitter 循环项": {
+      "main": [
+        [
+          {
+            "node": "X/Twitter 更新飞书记录",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "X/Twitter 更新飞书记录": {
+      "main": [
+        [
+          {
+            "node": "X/Twitter 处理结果",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "X/Twitter 处理结果": {
+      "main": [
+        [
+          {
+            "node": "X/Twitter 循环项",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "{{VERSION_ID}}",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "{{INSTANCE_ID}}"
+  },
+  "id": "AjIknRmucqU8C0Kn",
+  "tags": []
+}

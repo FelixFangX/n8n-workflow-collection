@@ -2,21 +2,96 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Agent-callable n8n workflow manifest",
   "type": "object",
-  "required": ["id", "workflowFile", "workflowName", "description", "trigger", "input", "output", "sideEffects", "requiresConfirmation", "mcp"],
+  "required": [
+    "id",
+    "edition",
+    "workflowFile",
+    "workflowName",
+    "description",
+    "trigger",
+    "input",
+    "output",
+    "sideEffects",
+    "requiresConfirmation",
+    "mcp"
+  ],
   "properties": {
-    "id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
-    "workflowFile": { "type": "string" },
-    "workflowName": { "type": "string", "description": "Must equal the export's name" },
-    "description": { "type": "string", "maxLength": 300, "description": "Paste into n8n: Workflow menu → Edit description" },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9-]+$"
+    },
+    "edition": {
+      "enum": [
+        "global",
+        "cn"
+      ],
+      "description": "global = English, international services; cn = Chinese, services reachable in mainland China. Must match the workflows/<edition>/ folder."
+    },
+    "workflowFile": {
+      "type": "string"
+    },
+    "workflowName": {
+      "type": "string",
+      "description": "Must equal the export's name"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 300,
+      "description": "Paste into n8n: Workflow menu → Edit description"
+    },
     "trigger": {
       "type": "object",
-      "required": ["type", "node"],
-      "properties": { "type": { "enum": ["manual", "webhook", "schedule", "chat", "form"] }, "node": { "type": "string" }, "method": { "type": "string" } }
+      "required": [
+        "type",
+        "node"
+      ],
+      "properties": {
+        "type": {
+          "enum": [
+            "manual",
+            "webhook",
+            "schedule",
+            "chat",
+            "form"
+          ]
+        },
+        "node": {
+          "type": "string"
+        },
+        "method": {
+          "type": "string"
+        }
+      }
     },
-    "input": { "type": "object", "description": "JSON Schema of the trigger input" },
-    "output": { "type": "object", "description": "JSON Schema of what the run produces" },
-    "sideEffects": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
-    "requiresConfirmation": { "type": "boolean", "description": "Agents should ask the user before executing" },
-    "mcp": { "type": "object", "required": ["executeWorkflow"], "properties": { "executeWorkflow": { "type": "object" } } }
+    "input": {
+      "type": "object",
+      "description": "JSON Schema of the trigger input"
+    },
+    "output": {
+      "type": "object",
+      "description": "JSON Schema of what the run produces"
+    },
+    "sideEffects": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1
+    },
+    "requiresConfirmation": {
+      "type": "boolean",
+      "description": "Agents should ask the user before executing"
+    },
+    "mcp": {
+      "type": "object",
+      "required": [
+        "executeWorkflow"
+      ],
+      "properties": {
+        "executeWorkflow": {
+          "type": "object"
+        }
+      }
+    }
   }
 }

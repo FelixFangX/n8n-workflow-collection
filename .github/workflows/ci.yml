@@ -11,3 +11,4 @@ jobs:
       - run: npm test
       - run: npm run check:redaction
       - run: npm run check:manifests
+      - run: npm run check:workflows

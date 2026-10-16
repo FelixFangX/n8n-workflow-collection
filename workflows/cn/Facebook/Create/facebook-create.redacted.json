@@ -1,0 +1,725 @@
+{
+  "name": "Facebook Create Workflow",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -6736,
+        2928
+      ],
+      "id": "{{NODE_OR_CONDITION_ID}}",
+      "name": "手动触发"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "cfg-bitable-token",
+              "name": "bitableToken",
+              "value": "{{BITABLE_APP_TOKEN}}",
+              "type": "string"
+            },
+            {
+              "id": "cfg-template-sheet-id",
+              "name": "templateSheetId",
+              "value": "{{BITABLE_TEMPLATE_TABLE_ID}}",
+              "type": "string"
+            },
+            {
+              "id": "cfg-year",
+              "name": "year",
+              "value": "2026",
+              "type": "string"
+            },
+            {
+              "id": "cfg-month",
+              "name": "month",
+              "value": "03",
+              "type": "string"
+            },
+            {
+              "id": "cfg-profile-urls",
+              "name": "profileUrls",
+              "value": "={{FACEBOOK_PROFILE_URL}}",
+              "type": "string"
+            },
+            {
+              "id": "cfg-deepseek-api-key",
+              "name": "deepseekApiKey",
+              "value": "{{DEEPSEEK_API_KEY}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -6512,
+        2928
+      ],
+      "id": "{{NODE_OR_CONDITION_ID}}",
+      "name": "配置参数"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/internal",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ app_id: '{{FEISHU_APP_ID}}', app_secret: '{{FEISHU_APP_SECRET}}' }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -6288,
+        2928
+      ],
+      "id": "{{NODE_OR_CONDITION_ID}}",
+      "name": "获取飞书 Tenant Token"
+    },
+    {
+      "parameters": {
+        "url": "=https://open.feishu.cn/open-apis/bitable/v1/apps/{{ $('配置参数').item.json.bitableToken }}/tables?page_size=100",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $json.tenant_access_token }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -6064,
+        2832
+      ],
+      "id": "{{NODE_OR_CONDITION_ID}}",
+      "name": "列出已有数据表"
+    },
+    {
+      "parameters": {
+        "url": "=https://open.feishu.cn/open-apis/bitable/v1/apps/{{ $('配置参数').item.json.bitableToken }}/tables/{{ $('配置参数').item.json.templateSheetId }}/fields?page_size=100",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $json.tenant_access_token }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -6064,
+        3024
+      ],
+      "id": "{{NODE_OR_CONDITION_ID}}",
+      "name": "获取模版 Sheet 字段列表"
+    },
+    {
+      "parameters": {
+        "jsCode": "const fieldsData = $json?.data?.items || [];\nconst config = $('配置参数').item.json;\nconst token = $('获取飞书 Tenant Token').item.json.tenant_access_token;\n\nconst platformField = fieldsData.find(f =>\n  f.field_name.toUpperCase().includes('SOCIAL MEDIA PLATFORM') ||\n  f.field_name.toUpperCase().includes('PLATFORM') ||\n  f.field_name.includes('平台')\n);\n\nconst linkField = fieldsData.find(f =>\n  f.field_name.toUpperCase().includes('POSTS LINK') ||\n  f.field_name.toUpperCase().includes('LINK') ||\n  f.field_name.includes('链接') ||\n  f.field_name.includes('URL')\n);\n\nconst fieldConfig = {\n  platformFieldName: platformField?.field_name || 'SOCIAL MEDIA PLATFORM',\n  linkFieldName: linkField?.field_name || 'POSTS Link',\n  allFields: fieldsData.map(f => ({\n    name: f.field_name,\n    type: f.type,\n    ui_type: f.ui_type,\n    field_id: f.field_id,\n    property: f.property || null\n  }))\n};\n\nreturn {\n  json: {\n    ...config,\n    tenant_access_token: token,\n    fieldConfig\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -5840,
+        3024
+      ],
+      "id": "{{NODE_OR_CONDITION_ID}}",
+      "name": "处理字段配置"
+    },
+    {
+      "parameters": {
+        "jsCode": "const tablesData = $json?.data?.items || [];\nconst config = $('配置参数').item.json;\nconst token = $('获取飞书 Tenant Token').item.json.tenant_access_token;\n\nconst tableNames = tablesData.map(t => t.name);\n\nreturn {\n  json: {\n    tableNames,\n    year: config.year,\n    month: config.month,\n    tenant_access_token: token,\n    bitableToken: config.bitableToken,\n    deepseekApiKey: config.deepseekApiKey\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -5840,
+        2832
+      ],
+      "id": "{{NODE_OR_CONDITION_ID}}",
+      "name": "提取已有表名列表"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.deepseek.com/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $json.deepseekApiKey }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: 'deepseek-chat', messages: [{ role: 'system', content: '你是一个数据分析助手。分析给定的表名列表，找出其命名规律，然后根据给定的年份和月份生成一个符合该规律的新表名。只返回一个JSON对象，格式为 {\"tableName\": \"新表名\"}，不要返回其他任何内容。' }, { role: 'user', content: `已有表名列表：${JSON.stringify($json.tableNames)}\\n\\n请根据以上表名的命名规律，为年份 ${$json.year} 月份 ${$json.month} 生成一个新表名。只返回JSON。` }], temperature: 0.1, response_format: { type: 'json_object' } }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -5616,
+        2832
+      ],
+      "id": "{{NODE_OR_CONDITION_ID}}",
+      "name": "调用 DeepSeek 分析表名",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const deepseekResp = $json;\nconst config = $('提取已有表名列表').first().json;\nconst year = config.year;\nconst month = config.month;\n\nlet tableName;\ntry {\n  const content = deepseekResp?.choices?.[0]?.message?.content || '';\n  const parsed = JSON.parse(content);\n  tableName = parsed.tableName || parsed.name || parsed.table_name;\n  if (!tableName || tableName.length > 100 || /[\\/\\\\?*:\\[\\]]/.test(tableName)) {\n    throw new Error('invalid table name');\n  }\n} catch (e) {\n  tableName = `${year}年${String(parseInt(month))}月`;\n}\n\nreturn {\n  json: {\n    tableName,\n    bitableToken: config.bitableToken,\n    tenant_access_token: config.tenant_access_token,\n    year,\n    month\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -5392,
+        2832
+      ],
+      "id": "{{NODE_OR_CONDITION_ID}}",
+      "name": "解析表名并 Fallback"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "fieldsToMatchString": "bitableToken, year, month",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        -5168,
+        2928
+      ],
+      "id": "{{NODE_OR_CONDITION_ID}}",
+      "name": "等待两分支完成"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nlet tableNameData = null;\nlet fieldConfigData = null;\n\nfor (const item of items) {\n  if (item.json.tableName) tableNameData = item.json;\n  if (item.json.fieldConfig) fieldConfigData = item.json;\n}\n\nif (!tableNameData) tableNameData = items[0].json;\nif (!fieldConfigData) fieldConfigData = items[items.length - 1].json;\n\nconst allFields = fieldConfigData.fieldConfig?.allFields || [];\nconst skipTypes = [20, 22, 23, 24];\n\nfunction cleanProperty(prop, fieldType) {\n  if (!prop) return undefined;\n  const cleaned = JSON.parse(JSON.stringify(prop));\n  delete cleaned.table_id;\n  delete cleaned.field_id;\n  delete cleaned.back_field_id;\n  delete cleaned.multiple;\n  if (fieldType === 3 || fieldType === 4) {\n    if (cleaned.options) {\n      cleaned.options = cleaned.options.map(opt => {\n        const o = { name: opt.name };\n        if (opt.color !== undefined) o.color = opt.color;\n        return o;\n      });\n    }\n    return cleaned;\n  }\n  if (fieldType === 2 || fieldType === 5) return cleaned;\n  if (Object.keys(cleaned).length === 0) return undefined;\n  return cleaned;\n}\n\nconst fields = allFields\n  .filter(f => !skipTypes.includes(f.type))\n  .map(f => {\n    const def = { field_name: f.name, type: f.type };\n    const prop = cleanProperty(f.property, f.type);\n    if (prop) def.property = prop;\n    return def;\n  });\n\nreturn {\n  json: {\n    tableName: tableNameData.tableName,\n    bitableToken: tableNameData.bitableToken,\n    tenant_access_token: tableNameData.tenant_access_token,\n    year: tableNameData.year,\n    month: tableNameData.month,\n    fieldConfig: fieldConfigData.fieldConfig,\n    fields\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -4944,
+        2928
+      ],
+      "id": "{{NODE_OR_CONDITION_ID}}",
+      "name": "合并表名与字段配置"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://open.feishu.cn/open-apis/bitable/v1/apps/{{ $json.bitableToken }}/tables",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $json.tenant_access_token }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ table: { name: $json.tableName, fields: $json.fields } }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -4720,
+        2928
+      ],
+      "id": "{{NODE_OR_CONDITION_ID}}",
+      "name": "创建新数据表"
+    },
+    {
+      "parameters": {
+        "jsCode": "const createResp = $json;\nconst newTableId = createResp?.data?.table_id;\nconst config = $('配置参数').item.json;\nconst fieldConfigNode = $('合并表名与字段配置').first().json;\nconst token = fieldConfigNode.tenant_access_token;\nconst year = config.year;\nconst month = config.month;\nconst profileUrlsStr = config.profileUrls;\nconst urls = profileUrlsStr.split(',').map(u => u.trim()).filter(u => u);\n\nconst monthInt = parseInt(month);\nconst yearInt = parseInt(year);\nconst startDate = `${year}-${month.padStart(2, '0')}-01`;\nconst nextMonth = monthInt === 12 ? 1 : monthInt + 1;\nconst nextYear = monthInt === 12 ? yearInt + 1 : yearInt;\nconst endDate = `${nextYear}-${String(nextMonth).padStart(2, '0')}-01`;\nconst lastDay = new Date(yearInt, monthInt, 0).getDate();\nconst endDateInclusive = `${year}-${month.padStart(2, '0')}-${lastDay}`;\n\nconst platformGroups = {\n  INSTAGRAM: [],\n  X: [],\n  YOUTUBE: [],\n  FACEBOOK: []\n};\n\nfor (const url of urls) {\n  const lower = url.toLowerCase();\n  if (lower.includes('instagram.com')) {\n    platformGroups.INSTAGRAM.push(url);\n  } else if (lower.includes('x.com') || lower.includes('twitter.com')) {\n    platformGroups.X.push(url);\n  } else if (lower.includes('youtube.com')) {\n    platformGroups.YOUTUBE.push(url);\n  } else if (lower.includes('facebook.com')) {\n    platformGroups.FACEBOOK.push(url);\n  }\n}\n\nconst xUsernames = platformGroups.X.map(url => {\n  const match = url.match(/(?:x\\.com|twitter\\.com)\\/([^/?#]+)/);\n  return match ? match[1] : null;\n}).filter(Boolean);\n\nconst xSearchTerms = xUsernames.map(u => `from:${u} since:${startDate} until:${endDate}`);\n\nreturn {\n  json: {\n    platformGroups,\n    xSearchTerms,\n    startDate,\n    endDate,\n    endDateInclusive,\n    year,\n    month,\n    newTableId,\n    bitableToken: config.bitableToken,\n    tenant_access_token: token,\n    fieldConfig: fieldConfigNode.fieldConfig\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -3600,
+        3024
+      ],
+      "id": "{{NODE_OR_CONDITION_ID}}",
+      "name": "解析URL并按平台分组"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $json;\nconst pg = data.platformGroups;\nconst results = [];\n\nconst base = {\n  startDate: data.startDate,\n  endDate: data.endDate,\n  endDateInclusive: data.endDateInclusive,\n  year: data.year,\n  month: data.month,\n  newTableId: data.newTableId,\n  bitableToken: data.bitableToken,\n  tenant_access_token: data.tenant_access_token,\n  fieldConfig: data.fieldConfig\n};\n\nif (pg.INSTAGRAM.length > 0) {\n  results.push({ json: { ...base, platform: 'INSTAGRAM', urls: pg.INSTAGRAM } });\n}\nif (pg.X.length > 0) {\n  results.push({ json: { ...base, platform: 'X', urls: pg.X, xSearchTerms: data.xSearchTerms } });\n}\nif (pg.YOUTUBE.length > 0) {\n  results.push({ json: { ...base, platform: 'YOUTUBE', urls: pg.YOUTUBE } });\n}\nif (pg.FACEBOOK.length > 0) {\n  results.push({ json: { ...base, platform: 'FACEBOOK', urls: pg.FACEBOOK } });\n}\n\nreturn results;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -3376,
+        3024
+      ],
+      "id": "{{NODE_OR_CONDITION_ID}}",
+      "name": "拆分到各平台分支"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "cond-fb",
+              "leftValue": "={{ $json.platform }}",
+              "rightValue": "FACEBOOK",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -3152,
+        3216
+      ],
+      "id": "{{NODE_OR_CONDITION_ID}}",
+      "name": "If Facebook"
+    },
+    {
+      "parameters": {
+        "operation": "Run actor and get dataset",
+        "actorSource": "store",
+        "actorId": {
+          "__rl": true,
+          "value": "KoJrdxJCTtpon81KY",
+          "mode": "list",
+          "cachedResultName": "Facebook Posts Scraper (apify/facebook-posts-scraper)",
+          "cachedResultUrl": "{{APIFY_FACEBOOK_ACTOR_URL}}"
+        },
+        "customBody": "={{ JSON.stringify({ captionText: false, resultsLimit: 200, startUrls: $json.urls.map(u => ({ url: u })), onlyPostsNewerThan: $json.startDate, onlyPostsOlderThan: $json.endDate }) }}"
+      },
+      "type": "@apify/n8n-nodes-apify.apify",
+      "typeVersion": 1,
+      "position": [
+        -2928,
+        3216
+      ],
+      "id": "{{NODE_OR_CONDITION_ID}}",
+      "name": "FaceBook Scraper",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "credentials": {
+        "apifyApi": {
+          "id": "{{APIFY_CREDENTIAL_ID}}",
+          "name": "{{APIFY_CREDENTIAL_NAME}}"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const scraperData = $('FaceBook Scraper').all().map(i => i.json);\nconst upstreamData = $('If Facebook').first().json;\nconst allFields = upstreamData.fieldConfig?.allFields || [];\n\nfunction findFieldConfig(targetName, fields) {\n  const t = targetName.toUpperCase();\n  return fields.find(f => f.name.toUpperCase().includes(t)) || null;\n}\n\nfunction formatDateField(dateStr, fc) {\n  if (!dateStr) return null;\n  const d = new Date(dateStr);\n  if (isNaN(d.getTime())) return null;\n  const yyyy = String(d.getFullYear());\n  const mm = String(d.getMonth() + 1).padStart(2, '0');\n  const dd = String(d.getDate()).padStart(2, '0');\n  const formatted = `${yyyy}/${mm}/${dd}`;\n  if (!fc) return formatted;\n  if (fc.type === 5) return d.getTime();\n  return formatted;\n}\n\nfunction matchOption(value, fc) {\n  if (!fc || !value) return null;\n  if (fc.type !== 3 && fc.type !== 4) return value;\n  const opts = fc.property?.options || [];\n  const vUp = value.toUpperCase();\n  const match = opts.find(o => o.name.toUpperCase() === vUp);\n  if (match) return match.name;\n  const partial = opts.find(o => o.name.toUpperCase().includes(vUp) || vUp.includes(o.name.toUpperCase()));\n  return partial ? partial.name : null;\n}\n\nfunction matchMultiOptions(values, fc) {\n  if (!fc || !values || values.length === 0) return null;\n  if (fc.type !== 4) {\n    const first = values.find(v => matchOption(v, fc));\n    return first ? matchOption(first, fc) : null;\n  }\n  const opts = fc.property?.options || [];\n  const matched = values.map(v => {\n    const vUp = v.toUpperCase();\n    return opts.find(o => o.name.toUpperCase() === vUp || o.name.toUpperCase().includes(vUp) || vUp.includes(o.name.toUpperCase()));\n  }).filter(Boolean).map(o => o.name);\n  return matched.length > 0 ? matched : null;\n}\n\nconst ctaPatterns = [\n  { pattern: /link\\s*in\\s*(bio|comment)/i, label: 'Link in Bio' },\n  { pattern: /shop\\s*now/i, label: 'Shop Now' },\n  { pattern: /check\\s*(it\\s*)?out/i, label: 'Check Out' },\n  { pattern: /subscribe/i, label: 'Subscribe' },\n  { pattern: /follow/i, label: 'Follow' },\n  { pattern: /sign\\s*up/i, label: 'Sign Up' },\n  { pattern: /learn\\s*more/i, label: 'Learn More' },\n  { pattern: /buy\\s*now/i, label: 'Buy Now' },\n  { pattern: /order\\s*now/i, label: 'Order Now' },\n  { pattern: /message\\s*us/i, label: 'Message' },\n  { pattern: /comment\\s*(below|your|what)/i, label: 'Comment' },\n  { pattern: /share\\s*(this|with)/i, label: 'Share' },\n  { pattern: /click/i, label: 'Click' },\n  { pattern: /download/i, label: 'Download' },\n  { pattern: /pre-?order/i, label: 'Pre-order' },\n  { pattern: /use\\s*code/i, label: 'Use Code' },\n  { pattern: /grab\\s*(yours|it)/i, label: 'Grab Yours' },\n  { pattern: /tag\\s*(a\\s*friend|someone)/i, label: 'Tag a Friend' }\n];\n\nfunction extractCTAs(text) {\n  if (!text) return [];\n  return ctaPatterns.filter(p => p.pattern.test(text)).map(p => p.label);\n}\n\nfunction inferCategory(scraped) {\n  const t = (scraped.type || '').toLowerCase();\n  if (t.includes('video') || scraped.viewsCount) return 'Video';\n  if (t.includes('photo') || (scraped.media && scraped.media.length > 0)) {\n    if (scraped.media && scraped.media.length > 1) return 'Carousel';\n    return 'Image';\n  }\n  if (t.includes('link') || scraped.link) return 'Link';\n  if (t.includes('event')) return 'Event';\n  return scraped.text ? 'Post' : null;\n}\n\nfunction inferSubcategories(scraped) {\n  const text = (scraped.text || '').toLowerCase();\n  const cats = [];\n  if (/new\\s*(product|launch|collection|arrival)|now\\s*available/i.test(text)) cats.push('Product');\n  if (/giveaway|contest|win\\s/i.test(text)) cats.push('Giveaway');\n  if (/how\\s*to|tutorial|step\\s*by\\s*step|tips/i.test(text)) cats.push('Tutorial');\n  if (/review|unbox/i.test(text)) cats.push('Review');\n  if (/behind\\s*the\\s*scenes|bts/i.test(text)) cats.push('Behind The Scenes');\n  if (/collab|partner|sponsored/i.test(text)) cats.push('Collaboration');\n  if (/announc|breaking|exciting\\s*news/i.test(text)) cats.push('Announcement');\n  if (/repost|community|fan/i.test(text)) cats.push('UGC');\n  if (/meme|funny/i.test(text)) cats.push('Entertainment');\n  if (scraped.textReferences) {\n    const hashtags = scraped.textReferences.filter(r => r.url && r.url.includes('/hashtag/')).map(r => {\n      const m = r.url.match(/hashtag\\/([^?/]+)/);\n      return m ? m[1].toLowerCase() : null;\n    }).filter(Boolean);\n    if (hashtags.some(t => ['product', 'newproduct', 'launch', 'shop'].includes(t))) cats.push('Product');\n    if (hashtags.some(t => ['giveaway', 'contest', 'win'].includes(t))) cats.push('Giveaway');\n    if (hashtags.some(t => ['tutorial', 'howto', 'tips', 'guide'].includes(t))) cats.push('Tutorial');\n  }\n  return [...new Set(cats)];\n}\n\nconst platformFieldConfig = findFieldConfig('PLATFORM', allFields);\nconst platformField = platformFieldConfig ? platformFieldConfig.name : null;\nconst linkFieldConfig = findFieldConfig('LINK', allFields);\nconst linkField = linkFieldConfig ? linkFieldConfig.name : null;\nconst likesFieldConfig = findFieldConfig('LIKES', allFields);\nconst likesField = likesFieldConfig ? likesFieldConfig.name : null;\nconst commentsFieldConfig = findFieldConfig('COMMENTS', allFields);\nconst commentsField = commentsFieldConfig ? commentsFieldConfig.name : null;\nconst sharesFieldConfig = findFieldConfig('SHARES', allFields);\nconst sharesField = sharesFieldConfig ? sharesFieldConfig.name : null;\nconst impressionsFieldConfig = findFieldConfig('IMPRESSIONS', allFields);\nconst impressionsField = impressionsFieldConfig ? impressionsFieldConfig.name : null;\nconst tagsFieldConfig = findFieldConfig('TAGS', allFields);\nconst tagsField = tagsFieldConfig ? tagsFieldConfig.name : null;\nconst dateFieldConfig = findFieldConfig('DATE OF POST', allFields);\nconst dateField = dateFieldConfig ? dateFieldConfig.name : null;\nconst catFieldConfig = findFieldConfig('CATEGORIES', allFields);\nconst catField = catFieldConfig ? catFieldConfig.name : null;\nconst subCatFieldConfig = findFieldConfig('SUBCATEGORIES', allFields);\nconst subCatField = subCatFieldConfig ? subCatFieldConfig.name : null;\nconst audienceFieldConfig = findFieldConfig('TARGET AUDIENCE', allFields);\nconst audienceField = audienceFieldConfig ? audienceFieldConfig.name : null;\nconst ctaFieldConfig = findFieldConfig('CALLS TO ACTION', allFields);\nconst ctaField = ctaFieldConfig ? ctaFieldConfig.name : null;\n\nconst results = [];\nfor (const scraped of scraperData) {\n  const fields = {};\n  if (platformField) fields[platformField] = 'Facebook';\n  if (linkField && (scraped.url || scraped.topLevelUrl)) {\n    const postUrl = scraped.url || scraped.topLevelUrl;\n    fields[linkField] = { link: postUrl, text: postUrl };\n  }\n  if (likesField && scraped.likes !== undefined) {\n    const isNum = likesFieldConfig.ui_type === 'Number';\n    fields[likesField] = isNum ? scraped.likes : scraped.likes.toString();\n  }\n  if (commentsField && scraped.comments !== undefined) {\n    const isNum = commentsFieldConfig.ui_type === 'Number';\n    fields[commentsField] = isNum ? scraped.comments : scraped.comments.toString();\n  }\n  if (sharesField && scraped.shares !== undefined) {\n    const isNum = sharesFieldConfig.ui_type === 'Number';\n    fields[sharesField] = isNum ? scraped.shares : scraped.shares.toString();\n  }\n  if (impressionsField && scraped.viewsCount !== undefined) {\n    const isNum = impressionsFieldConfig.ui_type === 'Number';\n    fields[impressionsField] = isNum ? scraped.viewsCount : scraped.viewsCount.toString();\n  }\n  if (tagsField && scraped.textReferences) {\n    const hashtags = scraped.textReferences\n      .filter(r => r.url && r.url.includes('/hashtag/'))\n      .map(r => {\n        const match = r.url.match(/hashtag\\/([^?/]+)/);\n        return match ? `#${match[1]}` : null;\n      })\n      .filter(Boolean);\n    if (hashtags.length > 0) {\n      const tagsText = hashtags.join(' ');\n      const isLink = tagsFieldConfig.ui_type === 'Url';\n      fields[tagsField] = isLink ? { link: scraped.url || '', text: tagsText } : tagsText;\n    }\n  }\n\n  if (dateField) {\n    const dv = formatDateField(scraped.time || scraped.date || scraped.publishedAt, dateFieldConfig);\n    if (dv !== null) fields[dateField] = dv;\n  }\n  if (catField) {\n    const cat = inferCategory(scraped);\n    if (cat) {\n      const mv = matchOption(cat, catFieldConfig);\n      if (mv) fields[catField] = mv;\n    }\n  }\n  if (subCatField) {\n    const subs = inferSubcategories(scraped);\n    if (subs.length > 0) {\n      const mv = matchMultiOptions(subs, subCatFieldConfig);\n      if (mv) fields[subCatField] = mv;\n    }\n  }\n  if (ctaField) {\n    const ctas = extractCTAs(scraped.text || '');\n    if (ctas.length > 0) {\n      const mv = matchMultiOptions(ctas, ctaFieldConfig);\n      if (mv) fields[ctaField] = mv;\n    }\n  }\n\n  results.push({ json: { fields } });\n}\n\nif (results.length === 0) {\n  return [{ json: { _empty: true, platform: 'Facebook' } }];\n}\nreturn results;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2704,
+        3216
+      ],
+      "id": "{{NODE_OR_CONDITION_ID}}",
+      "name": "Facebook 数据标准化"
+    },
+    {
+      "parameters": {
+        "jsCode": "const allItems = $input.all();\n\nconst validItems = [];\nfor (const item of allItems) {\n  if (!item.json._empty && item.json.fields) {\n    validItems.push(item.json);\n  }\n}\n\nconst upstreamData = $('解析URL并按平台分组').first().json;\n\nconst batchSize = 500;\nconst batches = [];\nfor (let i = 0; i < validItems.length; i += batchSize) {\n  batches.push(validItems.slice(i, i + batchSize));\n}\n\nif (batches.length === 0) {\n  return [{ json: { _skip: true, message: '无数据可写入', newTableId: upstreamData.newTableId } }];\n}\n\nreturn batches.map(batch => ({\n  json: {\n    records: batch.map(item => ({ fields: item.fields })),\n    newTableId: upstreamData.newTableId,\n    bitableToken: upstreamData.bitableToken,\n    tenant_access_token: upstreamData.tenant_access_token,\n    batchCount: batch.length\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2280,
+        2928
+      ],
+      "id": "{{NODE_OR_CONDITION_ID}}",
+      "name": "合并所有平台数据"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "skip-check-merge",
+              "leftValue": "={{ !$json._skip }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -2256,
+        3024
+      ],
+      "id": "{{NODE_OR_CONDITION_ID}}",
+      "name": "有数据需要写入?"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -2032,
+        2928
+      ],
+      "id": "{{NODE_OR_CONDITION_ID}}",
+      "name": "批量写入循环"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://open.feishu.cn/open-apis/bitable/v1/apps/{{ $json.bitableToken }}/tables/{{ $json.newTableId }}/records/batch_create",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $json.tenant_access_token }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ records: $json.records }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1808,
+        2832
+      ],
+      "id": "{{NODE_OR_CONDITION_ID}}",
+      "name": "批量新增飞书记录",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const ok = $json?.code === 0 || $json?.msg === 'success';\nreturn {\n  success: ok,\n  recordsCreated: $json?.data?.records?.length || 0,\n  raw: $json\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1584,
+        2832
+      ],
+      "id": "{{NODE_OR_CONDITION_ID}}",
+      "name": "处理写入结果"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "手动触发": {
+      "main": [
+        [
+          {
+            "node": "配置参数",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "配置参数": {
+      "main": [
+        [
+          {
+            "node": "获取飞书 Tenant Token",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "获取飞书 Tenant Token": {
+      "main": [
+        [
+          {
+            "node": "列出已有数据表",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "获取模版 Sheet 字段列表",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "列出已有数据表": {
+      "main": [
+        [
+          {
+            "node": "提取已有表名列表",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "获取模版 Sheet 字段列表": {
+      "main": [
+        [
+          {
+            "node": "处理字段配置",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "提取已有表名列表": {
+      "main": [
+        [
+          {
+            "node": "调用 DeepSeek 分析表名",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "调用 DeepSeek 分析表名": {
+      "main": [
+        [
+          {
+            "node": "解析表名并 Fallback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "解析表名并 Fallback": {
+      "main": [
+        [
+          {
+            "node": "等待两分支完成",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "处理字段配置": {
+      "main": [
+        [
+          {
+            "node": "等待两分支完成",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "等待两分支完成": {
+      "main": [
+        [
+          {
+            "node": "合并表名与字段配置",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "合并表名与字段配置": {
+      "main": [
+        [
+          {
+            "node": "创建新数据表",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "创建新数据表": {
+      "main": [
+        [
+          {
+            "node": "解析URL并按平台分组",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "解析URL并按平台分组": {
+      "main": [
+        [
+          {
+            "node": "拆分到各平台分支",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "拆分到各平台分支": {
+      "main": [
+        [
+          {
+            "node": "If Facebook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Facebook": {
+      "main": [
+        [
+          {
+            "node": "FaceBook Scraper",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FaceBook Scraper": {
+      "main": [
+        [
+          {
+            "node": "Facebook 数据标准化",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "合并所有平台数据": {
+      "main": [
+        [
+          {
+            "node": "有数据需要写入?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "有数据需要写入?": {
+      "main": [
+        [
+          {
+            "node": "批量写入循环",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "批量写入循环": {
+      "main": [
+        [
+          {
+            "node": "批量新增飞书记录",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "批量新增飞书记录": {
+      "main": [
+        [
+          {
+            "node": "处理写入结果",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "处理写入结果": {
+      "main": [
+        [
+          {
+            "node": "批量写入循环",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "{{VERSION_ID}}",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "{{INSTANCE_ID}}"
+  },
+  "id": "{{WORKFLOW_ID}}",
+  "tags": []
+}

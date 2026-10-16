@@ -1,0 +1,78 @@
+{
+  "$schema": "../../../../schema/manifest.schema.json",
+  "id": "lark-requirement-to-bitable-cn",
+  "edition": "cn",
+  "workflowFile": "feishu-bot-bitable-workflow.redacted.json",
+  "workflowName": "@Hex 机器人需求智能创建助手",
+  "description": "Turn a Lark/Feishu chat message describing a requirement into a structured Bitable record with an AI-written PRD draft, then reply to the sender with a card.",
+  "trigger": {
+    "type": "webhook",
+    "node": "接收飞书消息",
+    "method": "POST"
+  },
+  "input": {
+    "type": "object",
+    "description": "Webhook body (what the Lark bot relay posts).",
+    "required": [
+      "user_text",
+      "message_id",
+      "chat_id",
+      "sender_open_id"
+    ],
+    "properties": {
+      "user_text": {
+        "type": "string",
+        "description": "The requirement text as written in chat."
+      },
+      "message_id": {
+        "type": "string",
+        "description": "Lark message id to reply to."
+      },
+      "chat_id": {
+        "type": "string",
+        "description": "Lark chat id."
+      },
+      "sender_open_id": {
+        "type": "string",
+        "description": "Sender's Lark open_id (used to look up their name and fill person fields)."
+      }
+    }
+  },
+  "output": {
+    "type": "object",
+    "description": "execute_workflow returns an execution id. On success the workflow has created one Bitable record (fields filled by DeepSeek, PRD text in the PRD field) and replied in the chat.",
+    "properties": {
+      "executionId": {
+        "type": "string"
+      },
+      "record_id": {
+        "type": "string",
+        "description": "New Bitable record id (in the 新增多维表格记录 node output)."
+      }
+    }
+  },
+  "sideEffects": [
+    "Creates one Bitable record",
+    "Sends a Lark card reply to message_id",
+    "Calls the DeepSeek API twice"
+  ],
+  "requiresConfirmation": true,
+  "mcp": {
+    "executeWorkflow": {
+      "workflowId": "<id from search_workflows>",
+      "triggerNodeName": "接收飞书消息",
+      "inputs": {
+        "type": "webhook",
+        "webhookData": {
+          "method": "POST",
+          "body": {
+            "user_text": "Add CSV export to the orders page",
+            "message_id": "<message_id>",
+            "chat_id": "<chat_id>",
+            "sender_open_id": "<open_id>"
+          }
+        }
+      }
+    }
+  }
+}

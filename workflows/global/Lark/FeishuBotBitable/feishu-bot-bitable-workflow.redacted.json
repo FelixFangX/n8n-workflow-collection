@@ -1,0 +1,401 @@
+{
+  "name": "@Hex Bot: Smart Requirement Creator",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "{{WEBHOOK_PATH}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "{{NODE_OR_CONDITION_ID}}",
+      "name": "Receive Lark Message",
+      "webhookId": "{{WEBHOOK_ID}}"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://open.larksuite.com/open-apis/auth/v3/tenant_access_token/internal",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ app_id: '{{LARK_APP_ID}}', app_secret: '{{LARK_APP_SECRET}}' }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        288,
+        0
+      ],
+      "id": "{{NODE_OR_CONDITION_ID}}",
+      "name": "Get Lark Tenant Token"
+    },
+    {
+      "parameters": {
+        "url": "=https://open.larksuite.com/open-apis/contact/v3/users/{{SENDER_OPEN_ID}}?user_id_type=open_id",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $json.tenant_access_token }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        560,
+        0
+      ],
+      "id": "{{NODE_OR_CONDITION_ID}}",
+      "name": "Look Up Sender Info"
+    },
+    {
+      "parameters": {
+        "url": "=https://open.larksuite.com/open-apis/bitable/v1/apps/{{BITABLE_APP_TOKEN}}/tables/{{BITABLE_TABLE_ID}}/fields?page_size=100",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Get Lark Tenant Token').item.json.tenant_access_token }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        848,
+        0
+      ],
+      "id": "{{NODE_OR_CONDITION_ID}}",
+      "name": "Get Bitable Field List"
+    },
+    {
+      "parameters": {
+        "jsCode": "const webhookData = $('Receive Lark Message').item.json.body;\nconst userText = webhookData.user_text;\nconst messageId = webhookData.message_id;\nconst chatId = webhookData.chat_id;\nconst senderOpenId = webhookData.sender_open_id;\n\nconst senderInfo = $('Look Up Sender Info').item.json;\nconst senderName = senderInfo.data?.user?.name || 'Unknown user';\n\nconst now = new Date();\n// Your UTC offset in hours (0 = UTC). Change this to match your team's timezone.\nconst UTC_OFFSET_HOURS = 0;\nconst localTime = new Date(now.getTime() + UTC_OFFSET_HOURS * 60 * 60 * 1000 + now.getTimezoneOffset() * 60 * 1000);\nconst nowLocalStr = localTime.toISOString().replace('T', ' ').substring(0, 19);\nconst nowTimestamp = now.getTime();\n\nconst fieldsResponse = $input.item.json;\nconst fields = fieldsResponse.data?.items || [];\n\nconst readonlyTypes = [1001, 1002, 1003, 1004, 1005, 19, 20];\n\nconst typeMap = {\n  1: 'Text', 2: 'Number', 3: 'Single select', 4: 'Multi select',\n  5: 'Date/time', 7: 'Checkbox', 11: 'Person', 13: 'Phone',\n  15: 'URL', 17: 'Attachment', 18: 'One-way link', 21: 'Two-way link',\n  22: 'Location', 23: 'Group'\n};\n\nconst personFieldNames = fields.filter(f => f.type === 11).map(f => f.field_name);\nconst dateFieldNames = fields.filter(f => f.type === 5).map(f => f.field_name);\n\nconst writableFields = fields.filter(f => !readonlyTypes.includes(f.type));\n\nconst fieldsDescription = writableFields.map(f => {\n  const typeName = typeMap[f.type] || `Unknown (${f.type})`;\n  let desc = `- ${f.field_name} (type: ${typeName})`;\n  if (f.type === 11) {\n    desc += ` [current requester: ${senderName}]`;\n  }\n  if (f.type === 5) {\n    desc += ` [if the user mentions no date, default to the current time: ${nowLocalStr}, timestamp: ${nowTimestamp}]`;\n  }\n  if (f.description?.text) desc += ` [description: ${f.description.text}]`;\n  if (f.property?.options?.length > 0) {\n    desc += ` [options: ${f.property.options.map(o => o.name).join(', ')}]`;\n  }\n  return desc;\n}).join('\\n');\n\nconst fieldNameList = writableFields.map(f => f.field_name).join(', ');\n\nconst prompt = `You fill in records for a Lark Base (Bitable) table. From the user's request, generate field values for one new record.\n\n[Requester] ${senderName}\n[Current time (UTC${UTC_OFFSET_HOURS >= 0 ? '+' : ''}${UTC_OFFSET_HOURS})] ${nowLocalStr}\n[Current Unix timestamp (ms)] ${nowTimestamp}\n\n[User request]\n${userText}\n\n[Writable fields]\n${fieldsDescription}\n\n[Output rules]\n1. Return a valid JSON object: keys are field names, values are the field values\n2. Only fill fields you can reasonably infer from the request; leave out any field you cannot infer\n3. Text fields: a plain string\n4. Single-select fields: exactly one of the listed options, as a string\n5. Multi-select fields: an array of strings, each one of the listed options\n6. Number fields: a number\n7. Date/time fields: a Unix timestamp in milliseconds (number only). If the request mentions no date, use the current timestamp ${nowTimestamp} for every date/time field\n8. Checkbox fields: true or false\n9. Person fields: the string \"SENDER\" (the workflow replaces it with the real user ID)\n10. Writable field names: ${fieldNameList}\n11. Do not fill the field named \"AI PRD\"; another step fills it automatically\n\n[Important] Output only the JSON object, with no other text, explanation or markdown.`;\n\nreturn {\n  userText,\n  prompt,\n  message_id: messageId,\n  chat_id: chatId,\n  sender_open_id: senderOpenId,\n  sender_name: senderName,\n  person_field_names: personFieldNames,\n  date_field_names: dateFieldNames,\n  now_timestamp: nowTimestamp,\n  tenant_access_token: $('Get Lark Tenant Token').item.json.tenant_access_token\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        0
+      ],
+      "id": "{{NODE_OR_CONDITION_ID}}",
+      "name": "Build AI Prompt"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{OPENAI_API_KEY}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: 'gpt-4o-mini', messages: [{ role: 'system', content: 'You are a precise JSON generator. Output only a valid JSON object and nothing else.' }, { role: 'user', content: $json.prompt }], temperature: 0.2, max_tokens: 2048 }) }}",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1408,
+        0
+      ],
+      "id": "{{NODE_OR_CONDITION_ID}}",
+      "name": "OpenAI: Fill Form"
+    },
+    {
+      "parameters": {
+        "jsCode": "const aiContent = $json.choices?.[0]?.message?.content || '';\n\nconst jsonMatch = aiContent.match(/\\{[\\s\\S]*\\}/);\nif (!jsonMatch) {\n  throw new Error('No JSON object found in the AI response: ' + aiContent);\n}\n\nconst recordFields = JSON.parse(jsonMatch[0]);\n\nconst prevData = $('Build AI Prompt').item.json;\nconst senderOpenId = prevData.sender_open_id;\nconst personFieldNames = prevData.person_field_names || [];\nconst dateFieldNames = prevData.date_field_names || [];\nconst nowTimestamp = prevData.now_timestamp;\n\nfor (const [key, value] of Object.entries(recordFields)) {\n  if (personFieldNames.includes(key) && (!Array.isArray(value) || !value[0]?.id)) {\n    recordFields[key] = [{ id: senderOpenId }];\n  }\n}\n\nfor (const [key, value] of Object.entries(recordFields)) {\n  if (dateFieldNames.includes(key)) {\n    const num = Number(value);\n    if (!Number.isFinite(num) || num < 0) {\n      recordFields[key] = nowTimestamp;\n    } else {\n      recordFields[key] = num;\n    }\n  }\n}\n\nreturn {\n  recordFields,\n  message_id: prevData.message_id,\n  chat_id: prevData.chat_id,\n  userText: prevData.userText,\n  sender_name: prevData.sender_name,\n  tenant_access_token: prevData.tenant_access_token\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1680,
+        0
+      ],
+      "id": "{{NODE_OR_CONDITION_ID}}",
+      "name": "Parse Form Result & Inject Assignees"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{OPENAI_API_KEY}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: 'gpt-4o-mini', messages: [{ role: 'system', content: 'You are a product manager assistant. From the user's request, write a concise but complete product requirements document (PRD) for product and engineering. Output the Markdown body directly; the first line must be a # title. No preamble and no closing summary.' }, { role: 'user', content: 'Write a concise but complete PRD for product and engineering based on this request:\\n\\n' + $json.userText }], temperature: 0.3, max_tokens: 4096 }) }}",
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1968,
+        0
+      ],
+      "id": "{{NODE_OR_CONDITION_ID}}",
+      "name": "OpenAI: Generate PRD"
+    },
+    {
+      "parameters": {
+        "jsCode": "const prdContent = $json.choices?.[0]?.message?.content || '';\n\nconst prevData = $('Parse Form Result & Inject Assignees').item.json;\nconst recordFields = { ...prevData.recordFields };\n\nrecordFields['AI PRD'] = prdContent;\n\nreturn {\n  recordFields,\n  prdContent,\n  message_id: prevData.message_id,\n  chat_id: prevData.chat_id,\n  userText: prevData.userText,\n  sender_name: prevData.sender_name,\n  tenant_access_token: prevData.tenant_access_token\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2240,
+        0
+      ],
+      "id": "{{NODE_OR_CONDITION_ID}}",
+      "name": "Merge PRD into Record Fields"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://open.larksuite.com/open-apis/bitable/v1/apps/{{BITABLE_APP_TOKEN}}/tables/{{BITABLE_TABLE_ID}}/records",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $json.tenant_access_token }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ fields: $json.recordFields }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2528,
+        0
+      ],
+      "id": "{{NODE_OR_CONDITION_ID}}",
+      "name": "Create Bitable Record"
+    },
+    {
+      "parameters": {
+        "jsCode": "const prevData = $('Merge PRD into Record Fields').item.json;\nconst createResult = $json;\n\nconst recordId = createResult.data?.record?.record_id || 'Unknown';\nconst recordFields = prevData.recordFields;\nconst senderName = prevData.sender_name;\n\nconst bitableUrl = '{{BITABLE_BASE_URL}}{{BITABLE_APP_TOKEN}}?table={{BITABLE_TABLE_ID}}&view=veweQZFzEq';\n\n// Format a timestamp as a readable date. Set UTC_OFFSET_HOURS to your timezone (0 = UTC).\nconst UTC_OFFSET_HOURS = 0;\nfunction formatTimestamp(ts) {\n  if (!ts || isNaN(Number(ts))) return String(ts);\n  const d = new Date(Number(ts));\n  const offset = UTC_OFFSET_HOURS * 60 * 60 * 1000;\n  const cst = new Date(d.getTime() + offset + d.getTimezoneOffset() * 60 * 1000);\n  return cst.toISOString().replace('T', ' ').substring(0, 10);\n}\n\n// Department info\nconst deptRaw = recordFields['Requester.Department'];\nlet deptDisplay = '';\nif (Array.isArray(deptRaw) && deptRaw.length > 0) {\n  deptDisplay = deptRaw.join(', ');\n} else if (typeof deptRaw === 'string' && deptRaw) {\n  deptDisplay = deptRaw;\n}\n\n// Fields to skip (the AI PRD; department is shown separately)\nconst skipFields = ['AI PRD', 'Requester.Department'];\n\n// Field-name keywords that mark date fields\nconst dateKeywords = ['Date', 'Time'];\n\n// Build the fields array (two-column layout)\nconst fieldEntries = [];\nfor (const [key, value] of Object.entries(recordFields)) {\n  if (skipFields.includes(key)) continue;\n  let displayValue;\n  if (Array.isArray(value) && value[0]?.id) {\n    displayValue = senderName;\n  } else if (typeof value === 'number' && dateKeywords.some(k => key.includes(k))) {\n    displayValue = formatTimestamp(value);\n  } else if (typeof value === 'object') {\n    displayValue = JSON.stringify(value);\n  } else {\n    displayValue = String(value);\n  }\n  fieldEntries.push({ key, displayValue });\n}\n\n// Two fields per row\nconst fieldDivs = [];\nfor (let i = 0; i < fieldEntries.length; i += 2) {\n  const left = fieldEntries[i];\n  const right = fieldEntries[i + 1];\n  const fields = [\n    { is_short: true, text: { tag: 'lark_md', content: '**' + left.key + '**\\n' + left.displayValue } }\n  ];\n  if (right) {\n    fields.push({ is_short: true, text: { tag: 'lark_md', content: '**' + right.key + '**\\n' + right.displayValue } });\n  }\n  fieldDivs.push({ tag: 'div', fields });\n}\n\n// Top note element: department\nconst noteElements = deptDisplay\n  ? [{ tag: 'note', elements: [{ tag: 'plain_text', content: '🏢 Department: ' + deptDisplay }] }]\n  : [];\n\nconst cardContent = {\n  config: { wide_screen_mode: true },\n  header: {\n    title: { tag: 'plain_text', content: '✅ Requirement record created' },\n    template: 'green'\n  },\n  elements: [\n    {\n      tag: 'div',\n      fields: [\n        { is_short: true, text: { tag: 'lark_md', content: '**Requester**\\n' + senderName } },\n        { is_short: true, text: { tag: 'lark_md', content: '**Record ID**\\n' + recordId } }\n      ]\n    },\n    ...noteElements,\n    { tag: 'hr' },\n    {\n      tag: 'div',\n      text: { tag: 'lark_md', content: '**📋 Requirement fields**' }\n    },\n    ...fieldDivs,\n    { tag: 'hr' },\n    {\n      tag: 'div',\n      text: { tag: 'lark_md', content: '**🤖 AI PRD**\\nA full PRD was generated from your request and written to the AI PRD field.' }\n    },\n    { tag: 'hr' },\n    {\n      tag: 'action',\n      actions: [\n        {\n          tag: 'button',\n          text: { tag: 'plain_text', content: '📊 Open in Base' },\n          type: 'primary',\n          url: bitableUrl\n        }\n      ]\n    }\n  ]\n};\n\nreturn {\n  message_id: prevData.message_id,\n  cardContent: JSON.stringify(cardContent),\n  tenant_access_token: prevData.tenant_access_token\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2800,
+        0
+      ],
+      "id": "{{NODE_OR_CONDITION_ID}}",
+      "name": "Build Reply Message"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://open.larksuite.com/open-apis/im/v1/messages/{{ $json.message_id }}/reply",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $json.tenant_access_token }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ content: $json.cardContent, msg_type: 'interactive' }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3088,
+        0
+      ],
+      "id": "{{NODE_OR_CONDITION_ID}}",
+      "name": "Reply to Lark Message"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Receive Lark Message": {
+      "main": [
+        [
+          {
+            "node": "Get Lark Tenant Token",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Lark Tenant Token": {
+      "main": [
+        [
+          {
+            "node": "Look Up Sender Info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Look Up Sender Info": {
+      "main": [
+        [
+          {
+            "node": "Get Bitable Field List",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Bitable Field List": {
+      "main": [
+        [
+          {
+            "node": "Build AI Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build AI Prompt": {
+      "main": [
+        [
+          {
+            "node": "OpenAI: Fill Form",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI: Fill Form": {
+      "main": [
+        [
+          {
+            "node": "Parse Form Result & Inject Assignees",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Form Result & Inject Assignees": {
+      "main": [
+        [
+          {
+            "node": "OpenAI: Generate PRD",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI: Generate PRD": {
+      "main": [
+        [
+          {
+            "node": "Merge PRD into Record Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge PRD into Record Fields": {
+      "main": [
+        [
+          {
+            "node": "Create Bitable Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Bitable Record": {
+      "main": [
+        [
+          {
+            "node": "Build Reply Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Reply Message": {
+      "main": [
+        [
+          {
+            "node": "Reply to Lark Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "{{VERSION_ID}}",
+  "meta": {
+    "instanceId": "{{INSTANCE_ID}}"
+  },
+  "id": "{{WORKFLOW_ID}}",
+  "tags": []
+}

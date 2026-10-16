@@ -5,7 +5,7 @@ import { loadManifests, validateManifest } from "../scripts/manifests.mjs";
 
 const wf = { name: "Demo", nodes: [{ name: "Hook", type: "n8n-nodes-base.webhook", parameters: { httpMethod: "POST" } }] };
 const good = {
-  id: "demo", workflowFile: "demo.redacted.json", workflowName: "Demo", description: "Does a thing.",
+  id: "demo", edition: "global", workflowFile: "demo.redacted.json", workflowName: "Demo", description: "Does a thing.",
   trigger: { type: "webhook", node: "Hook" }, input: { type: "object", properties: {} }, output: { type: "object" },
   sideEffects: ["Writes a row"], requiresConfirmation: true,
   mcp: { executeWorkflow: { triggerNodeName: "Hook", inputs: { type: "webhook", webhookData: { body: {} } } } },
@@ -29,13 +29,22 @@ test("descriptions fit in n8n's description box", () => {
 });
 test("every workflow in the repo has exactly one valid manifest", async () => {
   const all = await loadManifests("workflows");
-  assert.equal(all.length, 11);
+  assert.equal(all.length, 22);
   for (const m of all) assert.deepEqual(m.errors, [], m.path);
   assert.equal(new Set(all.map((m) => m.manifest.id)).size, all.length);
+});
+test("both editions ship the same workflows; cn ids end in -cn", async () => {
+  const all = await loadManifests("workflows");
+  const by = (ed) => all.filter((m) => m.manifest.edition === ed).map((m) => m.manifest.id);
+  assert.equal(by("global").length, 11);
+  assert.deepEqual(by("cn").sort(), by("global").map((id) => `${id}-cn`).sort());
+});
+test("edition must be global or cn", () => {
+  assert.ok(validateManifest({ ...good, edition: "eu" }, wf).some((e) => /edition/.test(e)));
 });
 test("CLI lists manifests as JSON", () => {
   const r = spawnSync("node", ["scripts/manifests.mjs", "list", "--json"]);
   assert.equal(r.status, 0, r.stderr.toString());
   const out = JSON.parse(r.stdout);
-  assert.ok(out.find((m) => m.id === "lark-requirement-to-bitable").input.required.includes("user_text"));
+  assert.ok(out.find((m) => m.id === "lark-requirement-to-bitable" && m.edition === "global").input.required.includes("user_text"));
 });

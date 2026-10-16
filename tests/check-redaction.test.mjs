@@ -24,6 +24,16 @@ test("live webhook URLs are flagged; placeholder hosts are allowed", () => {
   assert.ok(rules(wf({ parameters: { url: "https://open.feishu.cn/open-apis/bot/v2/hook/0a1b2c3d-1111-2222-3333-444455556666" } })).includes("webhook-url"));
   assert.deepEqual(findLeaks(wf({ parameters: { url: "https://open.feishu.cn/open-apis/bot/v2/hook/{{LARK_WEBHOOK_ID}}" } })), []);
 });
+test("both editions' hosts and providers are covered (larksuite.com tenants, OpenAI project keys)", () => {
+  assert.ok(rules(wf({ parameters: { url: "https://acme.larksuite.com/base/bascnAbCdEfGhIjKlMnOpQrStUv" } })).includes("lark-tenant-url"));
+  assert.ok(rules(wf({ parameters: { key: "sk-proj-abcdefghijklmnopqrstuvwx" } })).includes("api-key"));
+  assert.deepEqual(findLeaks(wf({ parameters: { url: "https://open.larksuite.com/open-apis/bitable/v1/apps/{{BITABLE_APP_TOKEN}}" } })), []);
+});
+test("DingTalk and WeCom robot webhook tokens are flagged; placeholders are allowed", () => {
+  assert.ok(rules(wf({ parameters: { url: "https://oapi.dingtalk.com/robot/send?access_token=0123456789abcdef0123" } })).includes("im-webhook-token"));
+  assert.ok(rules(wf({ parameters: { url: "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=0a1b2c3d-1111-2222-3333-444455556666" } })).includes("im-webhook-token"));
+  assert.deepEqual(findLeaks(wf({ parameters: { url: "https://oapi.dingtalk.com/robot/send?access_token={{DINGTALK_TOKEN}}" } })), []);
+});
 test("email addresses are flagged", () => {
   assert.ok(rules(wf({ parameters: { to: "someone@example-corp.com" } })).includes("email"));
 });

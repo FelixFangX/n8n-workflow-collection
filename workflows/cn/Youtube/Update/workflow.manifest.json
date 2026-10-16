@@ -1,0 +1,40 @@
+{
+  "$schema": "../../../../schema/manifest.schema.json",
+  "id": "youtube-update-cn",
+  "edition": "cn",
+  "workflowFile": "youtube-update.redacted.json",
+  "workflowName": "Youtube Update Workflow",
+  "description": "Refresh metrics for YouTube posts already tracked in Bitable, via Apify.",
+  "trigger": {
+    "type": "manual",
+    "node": "手动触发"
+  },
+  "input": {
+    "type": "object",
+    "description": "No runtime input. Configure the 配置参数 node (Bitable app token, table id, Lark app id/secret) after import.",
+    "properties": {},
+    "additionalProperties": false
+  },
+  "output": {
+    "type": "object",
+    "description": "Rows written to Bitable; see the last node for the per-post result.",
+    "properties": {
+      "executionId": {
+        "type": "string",
+        "description": "Returned by n8n execute_workflow; poll get_execution for the result."
+      }
+    }
+  },
+  "sideEffects": [
+    "Updates existing Bitable records by record_id",
+    "Runs an Apify actor (uses Apify quota)"
+  ],
+  "requiresConfirmation": true,
+  "mcp": {
+    "executeWorkflow": {
+      "workflowId": "<id from search_workflows>",
+      "triggerNodeName": "手动触发",
+      "executionMode": "manual"
+    }
+  }
+}

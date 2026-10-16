@@ -28,7 +28,7 @@ Corresponding file: `social-media-effectiveness-tracker-create.redacted.json`
 
 ## Configuration to replace after import
 
-Check the `配置参数` node first. All of these placeholders must be replaced:
+Check the `Config` node first. All of these placeholders must be replaced:
 - `{{BITABLE_APP_TOKEN}}`
 - `{{BITABLE_TEMPLATE_TABLE_ID}}`
 - `{{DEEPSEEK_API_KEY}}`

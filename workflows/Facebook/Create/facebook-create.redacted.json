@@ -10,7 +10,7 @@
         2928
       ],
       "id": "{{NODE_OR_CONDITION_ID}}",
-      "name": "手动触发"
+      "name": "Manual Trigger"
     },
     {
       "parameters": {
@@ -63,7 +63,7 @@
         2928
       ],
       "id": "{{NODE_OR_CONDITION_ID}}",
-      "name": "配置参数"
+      "name": "Config"
     },
     {
       "parameters": {
@@ -81,11 +81,11 @@
         2928
       ],
       "id": "{{NODE_OR_CONDITION_ID}}",
-      "name": "获取飞书 Tenant Token"
+      "name": "Get Lark Tenant Token"
     },
     {
       "parameters": {
-        "url": "=https://open.feishu.cn/open-apis/bitable/v1/apps/{{ $('配置参数').item.json.bitableToken }}/tables?page_size=100",
+        "url": "=https://open.feishu.cn/open-apis/bitable/v1/apps/{{ $('Config').item.json.bitableToken }}/tables?page_size=100",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -104,11 +104,11 @@
         2832
       ],
       "id": "{{NODE_OR_CONDITION_ID}}",
-      "name": "列出已有数据表"
+      "name": "List Existing Tables"
     },
     {
       "parameters": {
-        "url": "=https://open.feishu.cn/open-apis/bitable/v1/apps/{{ $('配置参数').item.json.bitableToken }}/tables/{{ $('配置参数').item.json.templateSheetId }}/fields?page_size=100",
+        "url": "=https://open.feishu.cn/open-apis/bitable/v1/apps/{{ $('Config').item.json.bitableToken }}/tables/{{ $('Config').item.json.templateSheetId }}/fields?page_size=100",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -127,11 +127,11 @@
         3024
       ],
       "id": "{{NODE_OR_CONDITION_ID}}",
-      "name": "获取模版 Sheet 字段列表"
+      "name": "Get Template Sheet Field List"
     },
     {
       "parameters": {
-        "jsCode": "const fieldsData = $json?.data?.items || [];\nconst config = $('配置参数').item.json;\nconst token = $('获取飞书 Tenant Token').item.json.tenant_access_token;\n\nconst platformField = fieldsData.find(f =>\n  f.field_name.toUpperCase().includes('SOCIAL MEDIA PLATFORM') ||\n  f.field_name.toUpperCase().includes('PLATFORM') ||\n  f.field_name.includes('平台')\n);\n\nconst linkField = fieldsData.find(f =>\n  f.field_name.toUpperCase().includes('POSTS LINK') ||\n  f.field_name.toUpperCase().includes('LINK') ||\n  f.field_name.includes('链接') ||\n  f.field_name.includes('URL')\n);\n\nconst fieldConfig = {\n  platformFieldName: platformField?.field_name || 'SOCIAL MEDIA PLATFORM',\n  linkFieldName: linkField?.field_name || 'POSTS Link',\n  allFields: fieldsData.map(f => ({\n    name: f.field_name,\n    type: f.type,\n    ui_type: f.ui_type,\n    field_id: f.field_id,\n    property: f.property || null\n  }))\n};\n\nreturn {\n  json: {\n    ...config,\n    tenant_access_token: token,\n    fieldConfig\n  }\n};"
+        "jsCode": "const fieldsData = $json?.data?.items || [];\nconst config = $('Config').item.json;\nconst token = $('Get Lark Tenant Token').item.json.tenant_access_token;\n\nconst platformField = fieldsData.find(f =>\n  f.field_name.toUpperCase().includes('SOCIAL MEDIA PLATFORM') ||\n  f.field_name.toUpperCase().includes('PLATFORM') ||\n  f.field_name.includes('平台')\n);\n\nconst linkField = fieldsData.find(f =>\n  f.field_name.toUpperCase().includes('POSTS LINK') ||\n  f.field_name.toUpperCase().includes('LINK') ||\n  f.field_name.includes('链接') ||\n  f.field_name.includes('URL')\n);\n\nconst fieldConfig = {\n  platformFieldName: platformField?.field_name || 'SOCIAL MEDIA PLATFORM',\n  linkFieldName: linkField?.field_name || 'POSTS Link',\n  allFields: fieldsData.map(f => ({\n    name: f.field_name,\n    type: f.type,\n    ui_type: f.ui_type,\n    field_id: f.field_id,\n    property: f.property || null\n  }))\n};\n\nreturn {\n  json: {\n    ...config,\n    tenant_access_token: token,\n    fieldConfig\n  }\n};"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -140,11 +140,11 @@
         3024
       ],
       "id": "{{NODE_OR_CONDITION_ID}}",
-      "name": "处理字段配置"
+      "name": "Process Field Config"
     },
     {
       "parameters": {
-        "jsCode": "const tablesData = $json?.data?.items || [];\nconst config = $('配置参数').item.json;\nconst token = $('获取飞书 Tenant Token').item.json.tenant_access_token;\n\nconst tableNames = tablesData.map(t => t.name);\n\nreturn {\n  json: {\n    tableNames,\n    year: config.year,\n    month: config.month,\n    tenant_access_token: token,\n    bitableToken: config.bitableToken,\n    deepseekApiKey: config.deepseekApiKey\n  }\n};"
+        "jsCode": "const tablesData = $json?.data?.items || [];\nconst config = $('Config').item.json;\nconst token = $('Get Lark Tenant Token').item.json.tenant_access_token;\n\nconst tableNames = tablesData.map(t => t.name);\n\nreturn {\n  json: {\n    tableNames,\n    year: config.year,\n    month: config.month,\n    tenant_access_token: token,\n    bitableToken: config.bitableToken,\n    deepseekApiKey: config.deepseekApiKey\n  }\n};"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -153,7 +153,7 @@
         2832
       ],
       "id": "{{NODE_OR_CONDITION_ID}}",
-      "name": "提取已有表名列表"
+      "name": "Extract Existing Table Names"
     },
     {
       "parameters": {
@@ -184,14 +184,14 @@
         2832
       ],
       "id": "{{NODE_OR_CONDITION_ID}}",
-      "name": "调用 DeepSeek 分析表名",
+      "name": "DeepSeek: Infer Table Name",
       "retryOnFail": true,
       "maxTries": 2,
       "onError": "continueErrorOutput"
     },
     {
       "parameters": {
-        "jsCode": "const deepseekResp = $json;\nconst config = $('提取已有表名列表').first().json;\nconst year = config.year;\nconst month = config.month;\n\nlet tableName;\ntry {\n  const content = deepseekResp?.choices?.[0]?.message?.content || '';\n  const parsed = JSON.parse(content);\n  tableName = parsed.tableName || parsed.name || parsed.table_name;\n  if (!tableName || tableName.length > 100 || /[\\/\\\\?*:\\[\\]]/.test(tableName)) {\n    throw new Error('invalid table name');\n  }\n} catch (e) {\n  tableName = `${year}年${String(parseInt(month))}月`;\n}\n\nreturn {\n  json: {\n    tableName,\n    bitableToken: config.bitableToken,\n    tenant_access_token: config.tenant_access_token,\n    year,\n    month\n  }\n};"
+        "jsCode": "const deepseekResp = $json;\nconst config = $('Extract Existing Table Names').first().json;\nconst year = config.year;\nconst month = config.month;\n\nlet tableName;\ntry {\n  const content = deepseekResp?.choices?.[0]?.message?.content || '';\n  const parsed = JSON.parse(content);\n  tableName = parsed.tableName || parsed.name || parsed.table_name;\n  if (!tableName || tableName.length > 100 || /[\\/\\\\?*:\\[\\]]/.test(tableName)) {\n    throw new Error('invalid table name');\n  }\n} catch (e) {\n  tableName = `${year}年${String(parseInt(month))}月`;\n}\n\nreturn {\n  json: {\n    tableName,\n    bitableToken: config.bitableToken,\n    tenant_access_token: config.tenant_access_token,\n    year,\n    month\n  }\n};"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -200,7 +200,7 @@
         2832
       ],
       "id": "{{NODE_OR_CONDITION_ID}}",
-      "name": "解析表名并 Fallback"
+      "name": "Parse Table Name with Fallback"
     },
     {
       "parameters": {
@@ -215,7 +215,7 @@
         2928
       ],
       "id": "{{NODE_OR_CONDITION_ID}}",
-      "name": "等待两分支完成"
+      "name": "Wait for Both Branches"
     },
     {
       "parameters": {
@@ -228,7 +228,7 @@
         2928
       ],
       "id": "{{NODE_OR_CONDITION_ID}}",
-      "name": "合并表名与字段配置"
+      "name": "Merge Table Name & Field Config"
     },
     {
       "parameters": {
@@ -259,11 +259,11 @@
         2928
       ],
       "id": "{{NODE_OR_CONDITION_ID}}",
-      "name": "创建新数据表"
+      "name": "Create New Table"
     },
     {
       "parameters": {
-        "jsCode": "const createResp = $json;\nconst newTableId = createResp?.data?.table_id;\nconst config = $('配置参数').item.json;\nconst fieldConfigNode = $('合并表名与字段配置').first().json;\nconst token = fieldConfigNode.tenant_access_token;\nconst year = config.year;\nconst month = config.month;\nconst profileUrlsStr = config.profileUrls;\nconst urls = profileUrlsStr.split(',').map(u => u.trim()).filter(u => u);\n\nconst monthInt = parseInt(month);\nconst yearInt = parseInt(year);\nconst startDate = `${year}-${month.padStart(2, '0')}-01`;\nconst nextMonth = monthInt === 12 ? 1 : monthInt + 1;\nconst nextYear = monthInt === 12 ? yearInt + 1 : yearInt;\nconst endDate = `${nextYear}-${String(nextMonth).padStart(2, '0')}-01`;\nconst lastDay = new Date(yearInt, monthInt, 0).getDate();\nconst endDateInclusive = `${year}-${month.padStart(2, '0')}-${lastDay}`;\n\nconst platformGroups = {\n  INSTAGRAM: [],\n  X: [],\n  YOUTUBE: [],\n  FACEBOOK: []\n};\n\nfor (const url of urls) {\n  const lower = url.toLowerCase();\n  if (lower.includes('instagram.com')) {\n    platformGroups.INSTAGRAM.push(url);\n  } else if (lower.includes('x.com') || lower.includes('twitter.com')) {\n    platformGroups.X.push(url);\n  } else if (lower.includes('youtube.com')) {\n    platformGroups.YOUTUBE.push(url);\n  } else if (lower.includes('facebook.com')) {\n    platformGroups.FACEBOOK.push(url);\n  }\n}\n\nconst xUsernames = platformGroups.X.map(url => {\n  const match = url.match(/(?:x\\.com|twitter\\.com)\\/([^/?#]+)/);\n  return match ? match[1] : null;\n}).filter(Boolean);\n\nconst xSearchTerms = xUsernames.map(u => `from:${u} since:${startDate} until:${endDate}`);\n\nreturn {\n  json: {\n    platformGroups,\n    xSearchTerms,\n    startDate,\n    endDate,\n    endDateInclusive,\n    year,\n    month,\n    newTableId,\n    bitableToken: config.bitableToken,\n    tenant_access_token: token,\n    fieldConfig: fieldConfigNode.fieldConfig\n  }\n};"
+        "jsCode": "const createResp = $json;\nconst newTableId = createResp?.data?.table_id;\nconst config = $('Config').item.json;\nconst fieldConfigNode = $('Merge Table Name & Field Config').first().json;\nconst token = fieldConfigNode.tenant_access_token;\nconst year = config.year;\nconst month = config.month;\nconst profileUrlsStr = config.profileUrls;\nconst urls = profileUrlsStr.split(',').map(u => u.trim()).filter(u => u);\n\nconst monthInt = parseInt(month);\nconst yearInt = parseInt(year);\nconst startDate = `${year}-${month.padStart(2, '0')}-01`;\nconst nextMonth = monthInt === 12 ? 1 : monthInt + 1;\nconst nextYear = monthInt === 12 ? yearInt + 1 : yearInt;\nconst endDate = `${nextYear}-${String(nextMonth).padStart(2, '0')}-01`;\nconst lastDay = new Date(yearInt, monthInt, 0).getDate();\nconst endDateInclusive = `${year}-${month.padStart(2, '0')}-${lastDay}`;\n\nconst platformGroups = {\n  INSTAGRAM: [],\n  X: [],\n  YOUTUBE: [],\n  FACEBOOK: []\n};\n\nfor (const url of urls) {\n  const lower = url.toLowerCase();\n  if (lower.includes('instagram.com')) {\n    platformGroups.INSTAGRAM.push(url);\n  } else if (lower.includes('x.com') || lower.includes('twitter.com')) {\n    platformGroups.X.push(url);\n  } else if (lower.includes('youtube.com')) {\n    platformGroups.YOUTUBE.push(url);\n  } else if (lower.includes('facebook.com')) {\n    platformGroups.FACEBOOK.push(url);\n  }\n}\n\nconst xUsernames = platformGroups.X.map(url => {\n  const match = url.match(/(?:x\\.com|twitter\\.com)\\/([^/?#]+)/);\n  return match ? match[1] : null;\n}).filter(Boolean);\n\nconst xSearchTerms = xUsernames.map(u => `from:${u} since:${startDate} until:${endDate}`);\n\nreturn {\n  json: {\n    platformGroups,\n    xSearchTerms,\n    startDate,\n    endDate,\n    endDateInclusive,\n    year,\n    month,\n    newTableId,\n    bitableToken: config.bitableToken,\n    tenant_access_token: token,\n    fieldConfig: fieldConfigNode.fieldConfig\n  }\n};"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -272,7 +272,7 @@
         3024
       ],
       "id": "{{NODE_OR_CONDITION_ID}}",
-      "name": "解析URL并按平台分组"
+      "name": "Parse URLs & Group by Platform"
     },
     {
       "parameters": {
@@ -285,7 +285,7 @@
         3024
       ],
       "id": "{{NODE_OR_CONDITION_ID}}",
-      "name": "拆分到各平台分支"
+      "name": "Split by Platform"
     },
     {
       "parameters": {
@@ -362,11 +362,11 @@
         3216
       ],
       "id": "{{NODE_OR_CONDITION_ID}}",
-      "name": "Facebook 数据标准化"
+      "name": "Facebook Normalize Data"
     },
     {
       "parameters": {
-        "jsCode": "const allItems = $input.all();\n\nconst validItems = [];\nfor (const item of allItems) {\n  if (!item.json._empty && item.json.fields) {\n    validItems.push(item.json);\n  }\n}\n\nconst upstreamData = $('解析URL并按平台分组').first().json;\n\nconst batchSize = 500;\nconst batches = [];\nfor (let i = 0; i < validItems.length; i += batchSize) {\n  batches.push(validItems.slice(i, i + batchSize));\n}\n\nif (batches.length === 0) {\n  return [{ json: { _skip: true, message: '无数据可写入', newTableId: upstreamData.newTableId } }];\n}\n\nreturn batches.map(batch => ({\n  json: {\n    records: batch.map(item => ({ fields: item.fields })),\n    newTableId: upstreamData.newTableId,\n    bitableToken: upstreamData.bitableToken,\n    tenant_access_token: upstreamData.tenant_access_token,\n    batchCount: batch.length\n  }\n}));"
+        "jsCode": "const allItems = $input.all();\n\nconst validItems = [];\nfor (const item of allItems) {\n  if (!item.json._empty && item.json.fields) {\n    validItems.push(item.json);\n  }\n}\n\nconst upstreamData = $('Parse URLs & Group by Platform').first().json;\n\nconst batchSize = 500;\nconst batches = [];\nfor (let i = 0; i < validItems.length; i += batchSize) {\n  batches.push(validItems.slice(i, i + batchSize));\n}\n\nif (batches.length === 0) {\n  return [{ json: { _skip: true, message: '无数据可写入', newTableId: upstreamData.newTableId } }];\n}\n\nreturn batches.map(batch => ({\n  json: {\n    records: batch.map(item => ({ fields: item.fields })),\n    newTableId: upstreamData.newTableId,\n    bitableToken: upstreamData.bitableToken,\n    tenant_access_token: upstreamData.tenant_access_token,\n    batchCount: batch.length\n  }\n}));"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -375,7 +375,7 @@
         2928
       ],
       "id": "{{NODE_OR_CONDITION_ID}}",
-      "name": "合并所有平台数据"
+      "name": "Merge All Platform Data"
     },
     {
       "parameters": {
@@ -408,7 +408,7 @@
         3024
       ],
       "id": "{{NODE_OR_CONDITION_ID}}",
-      "name": "有数据需要写入?"
+      "name": "Has Data to Write?"
     },
     {
       "parameters": {
@@ -421,7 +421,7 @@
         2928
       ],
       "id": "{{NODE_OR_CONDITION_ID}}",
-      "name": "批量写入循环"
+      "name": "Batch Write Loop"
     },
     {
       "parameters": {
@@ -452,7 +452,7 @@
         2832
       ],
       "id": "{{NODE_OR_CONDITION_ID}}",
-      "name": "批量新增飞书记录",
+      "name": "Batch Create Lark Records",
       "onError": "continueRegularOutput"
     },
     {
@@ -467,160 +467,160 @@
         2832
       ],
       "id": "{{NODE_OR_CONDITION_ID}}",
-      "name": "处理写入结果"
+      "name": "Handle Write Results"
     }
   ],
   "pinData": {},
   "connections": {
-    "手动触发": {
+    "Manual Trigger": {
       "main": [
         [
           {
-            "node": "配置参数",
+            "node": "Config",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "配置参数": {
+    "Config": {
       "main": [
         [
           {
-            "node": "获取飞书 Tenant Token",
+            "node": "Get Lark Tenant Token",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "获取飞书 Tenant Token": {
+    "Get Lark Tenant Token": {
       "main": [
         [
           {
-            "node": "列出已有数据表",
+            "node": "List Existing Tables",
             "type": "main",
             "index": 0
           },
           {
-            "node": "获取模版 Sheet 字段列表",
+            "node": "Get Template Sheet Field List",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "列出已有数据表": {
+    "List Existing Tables": {
       "main": [
         [
           {
-            "node": "提取已有表名列表",
+            "node": "Extract Existing Table Names",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "获取模版 Sheet 字段列表": {
+    "Get Template Sheet Field List": {
       "main": [
         [
           {
-            "node": "处理字段配置",
+            "node": "Process Field Config",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "提取已有表名列表": {
+    "Extract Existing Table Names": {
       "main": [
         [
           {
-            "node": "调用 DeepSeek 分析表名",
+            "node": "DeepSeek: Infer Table Name",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "调用 DeepSeek 分析表名": {
+    "DeepSeek: Infer Table Name": {
       "main": [
         [
           {
-            "node": "解析表名并 Fallback",
+            "node": "Parse Table Name with Fallback",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "解析表名并 Fallback": {
+    "Parse Table Name with Fallback": {
       "main": [
         [
           {
-            "node": "等待两分支完成",
+            "node": "Wait for Both Branches",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "处理字段配置": {
+    "Process Field Config": {
       "main": [
         [
           {
-            "node": "等待两分支完成",
+            "node": "Wait for Both Branches",
             "type": "main",
             "index": 1
           }
         ]
       ]
     },
-    "等待两分支完成": {
+    "Wait for Both Branches": {
       "main": [
         [
           {
-            "node": "合并表名与字段配置",
+            "node": "Merge Table Name & Field Config",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "合并表名与字段配置": {
+    "Merge Table Name & Field Config": {
       "main": [
         [
           {
-            "node": "创建新数据表",
+            "node": "Create New Table",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "创建新数据表": {
+    "Create New Table": {
       "main": [
         [
           {
-            "node": "解析URL并按平台分组",
+            "node": "Parse URLs & Group by Platform",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "解析URL并按平台分组": {
+    "Parse URLs & Group by Platform": {
       "main": [
         [
           {
-            "node": "拆分到各平台分支",
+            "node": "Split by Platform",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "拆分到各平台分支": {
+    "Split by Platform": {
       "main": [
         [
           {
@@ -646,62 +646,62 @@
       "main": [
         [
           {
-            "node": "Facebook 数据标准化",
+            "node": "Facebook Normalize Data",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "合并所有平台数据": {
+    "Merge All Platform Data": {
       "main": [
         [
           {
-            "node": "有数据需要写入?",
+            "node": "Has Data to Write?",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "有数据需要写入?": {
+    "Has Data to Write?": {
       "main": [
         [
           {
-            "node": "批量写入循环",
+            "node": "Batch Write Loop",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "批量写入循环": {
+    "Batch Write Loop": {
       "main": [
         [
           {
-            "node": "批量新增飞书记录",
+            "node": "Batch Create Lark Records",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "批量新增飞书记录": {
+    "Batch Create Lark Records": {
       "main": [
         [
           {
-            "node": "处理写入结果",
+            "node": "Handle Write Results",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "处理写入结果": {
+    "Handle Write Results": {
       "main": [
         [
           {
-            "node": "批量写入循环",
+            "node": "Batch Write Loop",
             "type": "main",
             "index": 0
           }

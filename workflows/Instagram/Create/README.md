@@ -30,7 +30,7 @@ Corresponding file: `instagram-create.redacted.json`
 - `{{FEISHU_APP_SECRET}}`
 - `{{INSTAGRAM_PROFILE_URL}}`
 
-In the `配置参数` node, keep only Instagram links inside `profileUrls`. This standalone version is already scoped to a single platform.
+In the `Config` node, keep only Instagram links inside `profileUrls`. This standalone version is already scoped to a single platform.
 
 ## Main flow
 

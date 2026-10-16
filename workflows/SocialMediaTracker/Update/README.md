@@ -26,7 +26,7 @@ Corresponding file: `social-media-effectiveness-tracker.redacted.json`
 
 ## Configuration to replace after import
 
-Start with the `配置参数` node:
+Start with the `Config` node:
 - `{{BITABLE_APP_TOKEN}}`
 - `{{BITABLE_TABLE_ID}}`
 - `{{FEISHU_APP_ID}}`

@@ -23,6 +23,6 @@
 
 ## 说明
 
-当前独立版的 `配置参数` 已经收窄为只保留 Facebook 单个平台输入。
+当前独立版的 `Config` 已经收窄为只保留 Facebook 单个平台输入。
 
 建议把 `profileUrls` 节点里只保留 Facebook 链接，避免混入其他平台。

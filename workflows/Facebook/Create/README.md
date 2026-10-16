@@ -23,6 +23,6 @@ Corresponding file: `facebook-create.redacted.json`
 
 ## Notes
 
-The standalone `配置参数` node is already narrowed to Facebook-only input.
+The standalone `Config` node is already narrowed to Facebook-only input.
 
 Keep only Facebook links in `profileUrls` to avoid mixing platforms.

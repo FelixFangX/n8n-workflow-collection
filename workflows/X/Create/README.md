@@ -22,7 +22,7 @@ Corresponding file: `x-create.redacted.json`
 - `{{FEISHU_APP_SECRET}}`
 - `{{X_PROFILE_URL}}`
 
-In the `配置参数` node, keep only X / Twitter links inside `profileUrls`. This standalone version is already scoped to one platform.
+In the `Config` node, keep only X / Twitter links inside `profileUrls`. This standalone version is already scoped to one platform.
 
 ## Notes
 

@@ -1,5 +1,5 @@
 {
-  "name": "@Hex 机器人需求智能创建助手",
+  "name": "@Hex Bot: Smart Requirement Creator",
   "nodes": [
     {
       "parameters": {
@@ -14,7 +14,7 @@
         0
       ],
       "id": "{{NODE_OR_CONDITION_ID}}",
-      "name": "接收飞书消息",
+      "name": "Receive Lark Message",
       "webhookId": "{{WEBHOOK_ID}}"
     },
     {
@@ -33,7 +33,7 @@
         0
       ],
       "id": "{{NODE_OR_CONDITION_ID}}",
-      "name": "获取飞书 Tenant Token"
+      "name": "Get Lark Tenant Token"
     },
     {
       "parameters": {
@@ -56,7 +56,7 @@
         0
       ],
       "id": "{{NODE_OR_CONDITION_ID}}",
-      "name": "查询发送者信息"
+      "name": "Look Up Sender Info"
     },
     {
       "parameters": {
@@ -66,7 +66,7 @@
           "parameters": [
             {
               "name": "Authorization",
-              "value": "=Bearer {{ $('获取飞书 Tenant Token').item.json.tenant_access_token }}"
+              "value": "=Bearer {{ $('Get Lark Tenant Token').item.json.tenant_access_token }}"
             }
           ]
         },
@@ -79,11 +79,11 @@
         0
       ],
       "id": "{{NODE_OR_CONDITION_ID}}",
-      "name": "获取多维表格字段列表"
+      "name": "Get Bitable Field List"
     },
     {
       "parameters": {
-        "jsCode": "const webhookData = $('接收飞书消息').item.json.body;\nconst userText = webhookData.user_text;\nconst messageId = webhookData.message_id;\nconst chatId = webhookData.chat_id;\nconst senderOpenId = webhookData.sender_open_id;\n\nconst senderInfo = $('查询发送者信息').item.json;\nconst senderName = senderInfo.data?.user?.name || '未知用户';\n\nconst now = new Date();\nconst chinaOffset = 8 * 60 * 60 * 1000;\nconst chinaTime = new Date(now.getTime() + chinaOffset + now.getTimezoneOffset() * 60 * 1000);\nconst nowChinaStr = chinaTime.toISOString().replace('T', ' ').substring(0, 19);\nconst nowTimestamp = now.getTime();\n\nconst fieldsResponse = $input.item.json;\nconst fields = fieldsResponse.data?.items || [];\n\nconst readonlyTypes = [1001, 1002, 1003, 1004, 1005, 19, 20];\n\nconst typeMap = {\n  1: '文本', 2: '数字', 3: '单选', 4: '多选',\n  5: '日期时间', 7: '复选框', 11: '人员', 13: '电话',\n  15: '超链接', 17: '附件', 18: '单向关联', 21: '双向关联',\n  22: '地理位置', 23: '群组'\n};\n\nconst personFieldNames = fields.filter(f => f.type === 11).map(f => f.field_name);\nconst dateFieldNames = fields.filter(f => f.type === 5).map(f => f.field_name);\n\nconst writableFields = fields.filter(f => !readonlyTypes.includes(f.type));\n\nconst fieldsDescription = writableFields.map(f => {\n  const typeName = typeMap[f.type] || `未知(${f.type})`;\n  let desc = `- ${f.field_name} (类型: ${typeName})`;\n  if (f.type === 11) {\n    desc += ` [当前提出人: ${senderName}]`;\n  }\n  if (f.type === 5) {\n    desc += ` [若用户未提及日期，默认使用当前时间: ${nowChinaStr}，时间戳: ${nowTimestamp}]`;\n  }\n  if (f.description?.text) desc += ` [说明: ${f.description.text}]`;\n  if (f.property?.options?.length > 0) {\n    desc += ` [可选值: ${f.property.options.map(o => o.name).join('、')}]`;\n  }\n  return desc;\n}).join('\\n');\n\nconst fieldNameList = writableFields.map(f => f.field_name).join('、');\n\nconst prompt = `你是一个飞书多维表格记录填充助手。根据用户的需求描述，为多维表格生成一条新记录的字段值。\n\n【提出人】${senderName}\n【当前时间（中国时区）】${nowChinaStr}\n【当前 Unix 毫秒时间戳】${nowTimestamp}\n\n【用户需求】\n${userText}\n\n【表格可填写字段】\n${fieldsDescription}\n\n【输出要求】\n1. 返回一个合法的 JSON 对象，key 是字段名，value 是对应的值\n2. 只填写你能从需求中合理推断的字段，无法推断的字段不要包含在 JSON 中\n3. 文本类型字段直接填字符串值\n4. 单选类型字段必须从可选值中选择一个，用字符串填写\n5. 多选类型字段用字符串数组填写，每个值必须从可选值中选择\n6. 数字类型字段填数字\n7. 日期时间类型字段填 Unix 毫秒时间戳（纯数字）。如果用户需求中没有明确提及日期，所有日期时间字段默认使用当前时间戳 ${nowTimestamp}\n8. 复选框类型字段填 true 或 false\n9. 人员类型字段填字符串 \"SENDER\"（后续系统会自动替换为实际人员 ID）\n10. 可填写的字段名有：${fieldNameList}\n11. 不要填写名为「AI需求说明」的字段，它会由另一个流程自动填充\n\n【重要】只输出 JSON 对象，不要有任何其他文字、解释或 markdown 格式。`;\n\nreturn {\n  userText,\n  prompt,\n  message_id: messageId,\n  chat_id: chatId,\n  sender_open_id: senderOpenId,\n  sender_name: senderName,\n  person_field_names: personFieldNames,\n  date_field_names: dateFieldNames,\n  now_timestamp: nowTimestamp,\n  tenant_access_token: $('获取飞书 Tenant Token').item.json.tenant_access_token\n};"
+        "jsCode": "const webhookData = $('Receive Lark Message').item.json.body;\nconst userText = webhookData.user_text;\nconst messageId = webhookData.message_id;\nconst chatId = webhookData.chat_id;\nconst senderOpenId = webhookData.sender_open_id;\n\nconst senderInfo = $('Look Up Sender Info').item.json;\nconst senderName = senderInfo.data?.user?.name || '未知用户';\n\nconst now = new Date();\nconst chinaOffset = 8 * 60 * 60 * 1000;\nconst chinaTime = new Date(now.getTime() + chinaOffset + now.getTimezoneOffset() * 60 * 1000);\nconst nowChinaStr = chinaTime.toISOString().replace('T', ' ').substring(0, 19);\nconst nowTimestamp = now.getTime();\n\nconst fieldsResponse = $input.item.json;\nconst fields = fieldsResponse.data?.items || [];\n\nconst readonlyTypes = [1001, 1002, 1003, 1004, 1005, 19, 20];\n\nconst typeMap = {\n  1: '文本', 2: '数字', 3: '单选', 4: '多选',\n  5: '日期时间', 7: '复选框', 11: '人员', 13: '电话',\n  15: '超链接', 17: '附件', 18: '单向关联', 21: '双向关联',\n  22: '地理位置', 23: '群组'\n};\n\nconst personFieldNames = fields.filter(f => f.type === 11).map(f => f.field_name);\nconst dateFieldNames = fields.filter(f => f.type === 5).map(f => f.field_name);\n\nconst writableFields = fields.filter(f => !readonlyTypes.includes(f.type));\n\nconst fieldsDescription = writableFields.map(f => {\n  const typeName = typeMap[f.type] || `未知(${f.type})`;\n  let desc = `- ${f.field_name} (类型: ${typeName})`;\n  if (f.type === 11) {\n    desc += ` [当前提出人: ${senderName}]`;\n  }\n  if (f.type === 5) {\n    desc += ` [若用户未提及日期，默认使用当前时间: ${nowChinaStr}，时间戳: ${nowTimestamp}]`;\n  }\n  if (f.description?.text) desc += ` [说明: ${f.description.text}]`;\n  if (f.property?.options?.length > 0) {\n    desc += ` [可选值: ${f.property.options.map(o => o.name).join('、')}]`;\n  }\n  return desc;\n}).join('\\n');\n\nconst fieldNameList = writableFields.map(f => f.field_name).join('、');\n\nconst prompt = `你是一个飞书多维表格记录填充助手。根据用户的需求描述，为多维表格生成一条新记录的字段值。\n\n【提出人】${senderName}\n【当前时间（中国时区）】${nowChinaStr}\n【当前 Unix 毫秒时间戳】${nowTimestamp}\n\n【用户需求】\n${userText}\n\n【表格可填写字段】\n${fieldsDescription}\n\n【输出要求】\n1. 返回一个合法的 JSON 对象，key 是字段名，value 是对应的值\n2. 只填写你能从需求中合理推断的字段，无法推断的字段不要包含在 JSON 中\n3. 文本类型字段直接填字符串值\n4. 单选类型字段必须从可选值中选择一个，用字符串填写\n5. 多选类型字段用字符串数组填写，每个值必须从可选值中选择\n6. 数字类型字段填数字\n7. 日期时间类型字段填 Unix 毫秒时间戳（纯数字）。如果用户需求中没有明确提及日期，所有日期时间字段默认使用当前时间戳 ${nowTimestamp}\n8. 复选框类型字段填 true 或 false\n9. 人员类型字段填字符串 \"SENDER\"（后续系统会自动替换为实际人员 ID）\n10. 可填写的字段名有：${fieldNameList}\n11. 不要填写名为「AI需求说明」的字段，它会由另一个流程自动填充\n\n【重要】只输出 JSON 对象，不要有任何其他文字、解释或 markdown 格式。`;\n\nreturn {\n  userText,\n  prompt,\n  message_id: messageId,\n  chat_id: chatId,\n  sender_open_id: senderOpenId,\n  sender_name: senderName,\n  person_field_names: personFieldNames,\n  date_field_names: dateFieldNames,\n  now_timestamp: nowTimestamp,\n  tenant_access_token: $('Get Lark Tenant Token').item.json.tenant_access_token\n};"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -92,7 +92,7 @@
         0
       ],
       "id": "{{NODE_OR_CONDITION_ID}}",
-      "name": "构建 AI Prompt"
+      "name": "Build AI Prompt"
     },
     {
       "parameters": {
@@ -125,11 +125,11 @@
         0
       ],
       "id": "{{NODE_OR_CONDITION_ID}}",
-      "name": "调用 DeepSeek 填表"
+      "name": "DeepSeek: Fill Form"
     },
     {
       "parameters": {
-        "jsCode": "const aiContent = $json.choices?.[0]?.message?.content || '';\n\nconst jsonMatch = aiContent.match(/\\{[\\s\\S]*\\}/);\nif (!jsonMatch) {\n  throw new Error('AI 返回内容中未找到 JSON 对象: ' + aiContent);\n}\n\nconst recordFields = JSON.parse(jsonMatch[0]);\n\nconst prevData = $('构建 AI Prompt').item.json;\nconst senderOpenId = prevData.sender_open_id;\nconst personFieldNames = prevData.person_field_names || [];\nconst dateFieldNames = prevData.date_field_names || [];\nconst nowTimestamp = prevData.now_timestamp;\n\nfor (const [key, value] of Object.entries(recordFields)) {\n  if (personFieldNames.includes(key) && (!Array.isArray(value) || !value[0]?.id)) {\n    recordFields[key] = [{ id: senderOpenId }];\n  }\n}\n\nfor (const [key, value] of Object.entries(recordFields)) {\n  if (dateFieldNames.includes(key)) {\n    const num = Number(value);\n    if (!Number.isFinite(num) || num < 0) {\n      recordFields[key] = nowTimestamp;\n    } else {\n      recordFields[key] = num;\n    }\n  }\n}\n\nreturn {\n  recordFields,\n  message_id: prevData.message_id,\n  chat_id: prevData.chat_id,\n  userText: prevData.userText,\n  sender_name: prevData.sender_name,\n  tenant_access_token: prevData.tenant_access_token\n};"
+        "jsCode": "const aiContent = $json.choices?.[0]?.message?.content || '';\n\nconst jsonMatch = aiContent.match(/\\{[\\s\\S]*\\}/);\nif (!jsonMatch) {\n  throw new Error('AI 返回内容中未找到 JSON 对象: ' + aiContent);\n}\n\nconst recordFields = JSON.parse(jsonMatch[0]);\n\nconst prevData = $('Build AI Prompt').item.json;\nconst senderOpenId = prevData.sender_open_id;\nconst personFieldNames = prevData.person_field_names || [];\nconst dateFieldNames = prevData.date_field_names || [];\nconst nowTimestamp = prevData.now_timestamp;\n\nfor (const [key, value] of Object.entries(recordFields)) {\n  if (personFieldNames.includes(key) && (!Array.isArray(value) || !value[0]?.id)) {\n    recordFields[key] = [{ id: senderOpenId }];\n  }\n}\n\nfor (const [key, value] of Object.entries(recordFields)) {\n  if (dateFieldNames.includes(key)) {\n    const num = Number(value);\n    if (!Number.isFinite(num) || num < 0) {\n      recordFields[key] = nowTimestamp;\n    } else {\n      recordFields[key] = num;\n    }\n  }\n}\n\nreturn {\n  recordFields,\n  message_id: prevData.message_id,\n  chat_id: prevData.chat_id,\n  userText: prevData.userText,\n  sender_name: prevData.sender_name,\n  tenant_access_token: prevData.tenant_access_token\n};"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -138,7 +138,7 @@
         0
       ],
       "id": "{{NODE_OR_CONDITION_ID}}",
-      "name": "解析填表结果并注入人员"
+      "name": "Parse Form Result & Inject Assignees"
     },
     {
       "parameters": {
@@ -171,11 +171,11 @@
         0
       ],
       "id": "{{NODE_OR_CONDITION_ID}}",
-      "name": "调用 DeepSeek 生成 PRD"
+      "name": "DeepSeek: Generate PRD"
     },
     {
       "parameters": {
-        "jsCode": "const prdContent = $json.choices?.[0]?.message?.content || '';\n\nconst prevData = $('解析填表结果并注入人员').item.json;\nconst recordFields = { ...prevData.recordFields };\n\nrecordFields['AI需求说明'] = prdContent;\n\nreturn {\n  recordFields,\n  prdContent,\n  message_id: prevData.message_id,\n  chat_id: prevData.chat_id,\n  userText: prevData.userText,\n  sender_name: prevData.sender_name,\n  tenant_access_token: prevData.tenant_access_token\n};"
+        "jsCode": "const prdContent = $json.choices?.[0]?.message?.content || '';\n\nconst prevData = $('Parse Form Result & Inject Assignees').item.json;\nconst recordFields = { ...prevData.recordFields };\n\nrecordFields['AI需求说明'] = prdContent;\n\nreturn {\n  recordFields,\n  prdContent,\n  message_id: prevData.message_id,\n  chat_id: prevData.chat_id,\n  userText: prevData.userText,\n  sender_name: prevData.sender_name,\n  tenant_access_token: prevData.tenant_access_token\n};"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -184,7 +184,7 @@
         0
       ],
       "id": "{{NODE_OR_CONDITION_ID}}",
-      "name": "合并 PRD 到记录字段"
+      "name": "Merge PRD into Record Fields"
     },
     {
       "parameters": {
@@ -215,11 +215,11 @@
         0
       ],
       "id": "{{NODE_OR_CONDITION_ID}}",
-      "name": "新增多维表格记录"
+      "name": "Create Bitable Record"
     },
     {
       "parameters": {
-        "jsCode": "const prevData = $('合并 PRD 到记录字段').item.json;\nconst createResult = $json;\n\nconst recordId = createResult.data?.record?.record_id || '未知';\nconst recordFields = prevData.recordFields;\nconst senderName = prevData.sender_name;\n\nconst bitableUrl = '{{BITABLE_BASE_URL}}{{BITABLE_APP_TOKEN}}?table={{BITABLE_TABLE_ID}}&view=veweQZFzEq';\n\n// 日期时间戳格式化为可读字符串（中国时区）\nfunction formatTimestamp(ts) {\n  if (!ts || isNaN(Number(ts))) return String(ts);\n  const d = new Date(Number(ts));\n  const offset = 8 * 60 * 60 * 1000;\n  const cst = new Date(d.getTime() + offset + d.getTimezoneOffset() * 60 * 1000);\n  return cst.toISOString().replace('T', ' ').substring(0, 10);\n}\n\n// 提取部门信息\nconst deptRaw = recordFields['提出人.部门'];\nlet deptDisplay = '';\nif (Array.isArray(deptRaw) && deptRaw.length > 0) {\n  deptDisplay = deptRaw.join('、');\n} else if (typeof deptRaw === 'string' && deptRaw) {\n  deptDisplay = deptRaw;\n}\n\n// 跳过字段列表（仅跳过 AI 说明，部门单独处理）\nconst skipFields = ['AI需求说明', '提出人.部门'];\n\n// 日期类字段名\nconst dateKeywords = ['日期', '时间'];\n\n// 生成字段 fields 数组（两列布局）\nconst fieldEntries = [];\nfor (const [key, value] of Object.entries(recordFields)) {\n  if (skipFields.includes(key)) continue;\n  let displayValue;\n  if (Array.isArray(value) && value[0]?.id) {\n    displayValue = senderName;\n  } else if (typeof value === 'number' && dateKeywords.some(k => key.includes(k))) {\n    displayValue = formatTimestamp(value);\n  } else if (typeof value === 'object') {\n    displayValue = JSON.stringify(value);\n  } else {\n    displayValue = String(value);\n  }\n  fieldEntries.push({ key, displayValue });\n}\n\n// 每行两列显示字段\nconst fieldDivs = [];\nfor (let i = 0; i < fieldEntries.length; i += 2) {\n  const left = fieldEntries[i];\n  const right = fieldEntries[i + 1];\n  const fields = [\n    { is_short: true, text: { tag: 'lark_md', content: '**' + left.key + '**\\n' + left.displayValue } }\n  ];\n  if (right) {\n    fields.push({ is_short: true, text: { tag: 'lark_md', content: '**' + right.key + '**\\n' + right.displayValue } });\n  }\n  fieldDivs.push({ tag: 'div', fields });\n}\n\n// 顶部 note 元素：部门信息\nconst noteElements = deptDisplay\n  ? [{ tag: 'note', elements: [{ tag: 'plain_text', content: '🏢 所属部门：' + deptDisplay }] }]\n  : [];\n\nconst cardContent = {\n  config: { wide_screen_mode: true },\n  header: {\n    title: { tag: 'plain_text', content: '✅ 需求记录已创建' },\n    template: 'green'\n  },\n  elements: [\n    {\n      tag: 'div',\n      fields: [\n        { is_short: true, text: { tag: 'lark_md', content: '**提出人**\\n' + senderName } },\n        { is_short: true, text: { tag: 'lark_md', content: '**记录 ID**\\n' + recordId } }\n      ]\n    },\n    ...noteElements,\n    { tag: 'hr' },\n    {\n      tag: 'div',\n      text: { tag: 'lark_md', content: '**📋 需求字段详情**' }\n    },\n    ...fieldDivs,\n    { tag: 'hr' },\n    {\n      tag: 'div',\n      text: { tag: 'lark_md', content: '**🤖 AI需求说明**\\n已根据您的描述自动生成完整 PRD 文档，已写入多维表格对应字段。' }\n    },\n    { tag: 'hr' },\n    {\n      tag: 'action',\n      actions: [\n        {\n          tag: 'button',\n          text: { tag: 'plain_text', content: '📊 查看多维表格' },\n          type: 'primary',\n          url: bitableUrl\n        }\n      ]\n    }\n  ]\n};\n\nreturn {\n  message_id: prevData.message_id,\n  cardContent: JSON.stringify(cardContent),\n  tenant_access_token: prevData.tenant_access_token\n};"
+        "jsCode": "const prevData = $('Merge PRD into Record Fields').item.json;\nconst createResult = $json;\n\nconst recordId = createResult.data?.record?.record_id || '未知';\nconst recordFields = prevData.recordFields;\nconst senderName = prevData.sender_name;\n\nconst bitableUrl = '{{BITABLE_BASE_URL}}{{BITABLE_APP_TOKEN}}?table={{BITABLE_TABLE_ID}}&view=veweQZFzEq';\n\n// 日期时间戳格式化为可读字符串（中国时区）\nfunction formatTimestamp(ts) {\n  if (!ts || isNaN(Number(ts))) return String(ts);\n  const d = new Date(Number(ts));\n  const offset = 8 * 60 * 60 * 1000;\n  const cst = new Date(d.getTime() + offset + d.getTimezoneOffset() * 60 * 1000);\n  return cst.toISOString().replace('T', ' ').substring(0, 10);\n}\n\n// 提取部门信息\nconst deptRaw = recordFields['提出人.部门'];\nlet deptDisplay = '';\nif (Array.isArray(deptRaw) && deptRaw.length > 0) {\n  deptDisplay = deptRaw.join('、');\n} else if (typeof deptRaw === 'string' && deptRaw) {\n  deptDisplay = deptRaw;\n}\n\n// 跳过字段列表（仅跳过 AI 说明，部门单独处理）\nconst skipFields = ['AI需求说明', '提出人.部门'];\n\n// 日期类字段名\nconst dateKeywords = ['日期', '时间'];\n\n// 生成字段 fields 数组（两列布局）\nconst fieldEntries = [];\nfor (const [key, value] of Object.entries(recordFields)) {\n  if (skipFields.includes(key)) continue;\n  let displayValue;\n  if (Array.isArray(value) && value[0]?.id) {\n    displayValue = senderName;\n  } else if (typeof value === 'number' && dateKeywords.some(k => key.includes(k))) {\n    displayValue = formatTimestamp(value);\n  } else if (typeof value === 'object') {\n    displayValue = JSON.stringify(value);\n  } else {\n    displayValue = String(value);\n  }\n  fieldEntries.push({ key, displayValue });\n}\n\n// 每行两列显示字段\nconst fieldDivs = [];\nfor (let i = 0; i < fieldEntries.length; i += 2) {\n  const left = fieldEntries[i];\n  const right = fieldEntries[i + 1];\n  const fields = [\n    { is_short: true, text: { tag: 'lark_md', content: '**' + left.key + '**\\n' + left.displayValue } }\n  ];\n  if (right) {\n    fields.push({ is_short: true, text: { tag: 'lark_md', content: '**' + right.key + '**\\n' + right.displayValue } });\n  }\n  fieldDivs.push({ tag: 'div', fields });\n}\n\n// 顶部 note 元素：部门信息\nconst noteElements = deptDisplay\n  ? [{ tag: 'note', elements: [{ tag: 'plain_text', content: '🏢 所属部门：' + deptDisplay }] }]\n  : [];\n\nconst cardContent = {\n  config: { wide_screen_mode: true },\n  header: {\n    title: { tag: 'plain_text', content: '✅ 需求记录已创建' },\n    template: 'green'\n  },\n  elements: [\n    {\n      tag: 'div',\n      fields: [\n        { is_short: true, text: { tag: 'lark_md', content: '**提出人**\\n' + senderName } },\n        { is_short: true, text: { tag: 'lark_md', content: '**记录 ID**\\n' + recordId } }\n      ]\n    },\n    ...noteElements,\n    { tag: 'hr' },\n    {\n      tag: 'div',\n      text: { tag: 'lark_md', content: '**📋 需求字段详情**' }\n    },\n    ...fieldDivs,\n    { tag: 'hr' },\n    {\n      tag: 'div',\n      text: { tag: 'lark_md', content: '**🤖 AI需求说明**\\n已根据您的描述自动生成完整 PRD 文档，已写入多维表格对应字段。' }\n    },\n    { tag: 'hr' },\n    {\n      tag: 'action',\n      actions: [\n        {\n          tag: 'button',\n          text: { tag: 'plain_text', content: '📊 查看多维表格' },\n          type: 'primary',\n          url: bitableUrl\n        }\n      ]\n    }\n  ]\n};\n\nreturn {\n  message_id: prevData.message_id,\n  cardContent: JSON.stringify(cardContent),\n  tenant_access_token: prevData.tenant_access_token\n};"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -228,7 +228,7 @@
         0
       ],
       "id": "{{NODE_OR_CONDITION_ID}}",
-      "name": "构建回复消息"
+      "name": "Build Reply Message"
     },
     {
       "parameters": {
@@ -259,126 +259,126 @@
         0
       ],
       "id": "{{NODE_OR_CONDITION_ID}}",
-      "name": "回复飞书消息"
+      "name": "Reply to Lark Message"
     }
   ],
   "pinData": {},
   "connections": {
-    "接收飞书消息": {
+    "Receive Lark Message": {
       "main": [
         [
           {
-            "node": "获取飞书 Tenant Token",
+            "node": "Get Lark Tenant Token",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "获取飞书 Tenant Token": {
+    "Get Lark Tenant Token": {
       "main": [
         [
           {
-            "node": "查询发送者信息",
+            "node": "Look Up Sender Info",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "查询发送者信息": {
+    "Look Up Sender Info": {
       "main": [
         [
           {
-            "node": "获取多维表格字段列表",
+            "node": "Get Bitable Field List",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "获取多维表格字段列表": {
+    "Get Bitable Field List": {
       "main": [
         [
           {
-            "node": "构建 AI Prompt",
+            "node": "Build AI Prompt",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "构建 AI Prompt": {
+    "Build AI Prompt": {
       "main": [
         [
           {
-            "node": "调用 DeepSeek 填表",
+            "node": "DeepSeek: Fill Form",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "调用 DeepSeek 填表": {
+    "DeepSeek: Fill Form": {
       "main": [
         [
           {
-            "node": "解析填表结果并注入人员",
+            "node": "Parse Form Result & Inject Assignees",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "解析填表结果并注入人员": {
+    "Parse Form Result & Inject Assignees": {
       "main": [
         [
           {
-            "node": "调用 DeepSeek 生成 PRD",
+            "node": "DeepSeek: Generate PRD",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "调用 DeepSeek 生成 PRD": {
+    "DeepSeek: Generate PRD": {
       "main": [
         [
           {
-            "node": "合并 PRD 到记录字段",
+            "node": "Merge PRD into Record Fields",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "合并 PRD 到记录字段": {
+    "Merge PRD into Record Fields": {
       "main": [
         [
           {
-            "node": "新增多维表格记录",
+            "node": "Create Bitable Record",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "新增多维表格记录": {
+    "Create Bitable Record": {
       "main": [
         [
           {
-            "node": "构建回复消息",
+            "node": "Build Reply Message",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "构建回复消息": {
+    "Build Reply Message": {
       "main": [
         [
           {
-            "node": "回复飞书消息",
+            "node": "Reply to Lark Message",
             "type": "main",
             "index": 0
           }

@@ -2,15 +2,15 @@
   "$schema": "../../../schema/manifest.schema.json",
   "id": "social-tracker-create",
   "workflowFile": "social-media-effectiveness-tracker-create.redacted.json",
-  "workflowName": "Social Media Effectiveness Tracker - 海外多平台帖子数据采集新增",
+  "workflowName": "Social Media Effectiveness Tracker - Multi-platform Post Collection (Create)",
   "description": "Create this month's social-media tracking table in Bitable and import posts for Instagram, X, YouTube and Facebook via Apify.",
   "trigger": {
     "type": "manual",
-    "node": "手动触发"
+    "node": "Manual Trigger"
   },
   "input": {
     "type": "object",
-    "description": "No runtime input. Configure the 配置参数 node (Bitable app token, table id, Lark app id/secret) after import.",
+    "description": "No runtime input. Configure the Config node (Bitable app token, table id, Lark app id/secret) after import.",
     "properties": {},
     "additionalProperties": false
   },
@@ -32,7 +32,7 @@
   "mcp": {
     "executeWorkflow": {
       "workflowId": "<id from search_workflows>",
-      "triggerNodeName": "手动触发",
+      "triggerNodeName": "Manual Trigger",
       "executionMode": "manual"
     }
   }

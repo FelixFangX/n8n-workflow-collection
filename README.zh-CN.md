@@ -45,6 +45,16 @@
 
 > 社媒相关 workflow 依赖 Apify Actor。仅导入 workflow 并不代表一定可用，Apify 账号仍需具备对应权限、额度或订阅能力。
 
+## 现状（2026-11）
+
+**多数情况不必再用这个仓库。**
+
+如果你已经在用 **[lark-cli](https://github.com/larksuite/cli)**（或飞书/Lark Open API），再加上 **Grok Bot**、Codex、Claude Code 这类工作 Agent / Harness，同样的事——定时拉取、写多维表格、从聊天起草 PRD——不必再导入这些 n8n 流程。循环由 Agent 接管；对这套栈来说 n8n 不再是最省事的控制面。
+
+只有当你仍然把 **n8n 当系统源**（非工程师要可视化运维、已有 n8n 托管，或就是要这些脱敏 JSON / MCP manifest）时，才继续用本仓库。否则优先 lark-cli + Agent。
+
+下面的工作流仅作参考导出保留。
+
 ## 快速开始
 
 1. 将目标 `.redacted.json` 文件导入 n8n。

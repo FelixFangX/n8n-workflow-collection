@@ -5,6 +5,16 @@
 
 **Import-ready, redacted n8n workflows: Lark/Feishu bot messages into Bitable records and PRD drafts, plus social-media metrics tracking via Apify.** English | [简体中文（国内版）](./README.zh-CN.md)
 
+## Status (2026-11)
+
+**Most people should skip this repo.**
+
+If you already use **[lark-cli](https://github.com/larksuite/cli)** (or Feishu/Lark Open APIs) plus a work agent such as **Grok Bot**, Codex, Claude Code, or a similar harness, you can do the same jobs — scheduled pulls, Bitable writes, PRD drafts from chat — without importing these n8n graphs. Agents own the loop; n8n is no longer the easiest control plane for that stack.
+
+Keep this collection only if you still run **n8n as the system of record** (visual ops for non-engineers, existing n8n hosting, or you need the redacted JSON + MCP manifests as-is). Otherwise prefer lark-cli + your agent.
+
+The workflows below stay as reference exports.
+
 ## Editions
 
 The workflows ship in two editions with the same structure. Start with **global**.

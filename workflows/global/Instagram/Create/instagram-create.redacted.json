@@ -652,6 +652,17 @@
         ]
       ]
     },
+    "Instagram Normalize Data": {
+      "main": [
+        [
+          {
+            "node": "Merge All Platform Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
     "Merge All Platform Data": {
       "main": [
         [

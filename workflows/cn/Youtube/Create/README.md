@@ -24,6 +24,8 @@
 
 ## 说明
 
+`YouTube 数据标准化` 连接到 `合并所有平台数据`，再进入批量写入（`/records/batch_create`）。该写入节点的 `onError` 是 `continueRegularOutput`，失败的批次仍可能走成功输出。重放去重未验证。见 [import preflight](../../../../docs/import-preflight.md)。
+
 当前独立版的 `配置参数` 已经收窄为只保留 YouTube 单个平台输入。
 
 建议导入后先确认你要抓的是频道、视频还是 Shorts，再调整 Apify 输入。

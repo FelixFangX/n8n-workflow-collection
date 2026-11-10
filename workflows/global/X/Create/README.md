@@ -26,4 +26,6 @@ In the `Config` node, keep only X / Twitter links inside `profileUrls`. This sta
 
 ## Notes
 
+`X/Twitter Normalize Data` connects to `Merge All Platform Data`, then the batch write (`/records/batch_create`). That write sets `onError` to `continueRegularOutput`, so a failed batch can continue on the success output. Replay dedup is unverified. See [import preflight](../../../../docs/import-preflight.md).
+
 The Create flow uses year/month information to build X search conditions, which makes it suitable for monthly archive-style collection.

@@ -1,0 +1,43 @@
+{
+  "name": "Synthetic duplicate event",
+  "active": false,
+  "nodes": [
+    {
+      "name": "Receive",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "parameters": { "httpMethod": "POST", "path": "{{WEBHOOK_PATH}}" }
+    },
+    {
+      "name": "Remember Id",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "parameters": { "jsCode": "const message_id = $json.body.message_id; return [{ json: { message_id } }];" }
+    },
+    {
+      "name": "Create Record",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "retryOnFail": true,
+      "maxTries": 2,
+      "parameters": {
+        "method": "POST",
+        "url": "https://open.larksuite.com/open-apis/bitable/v1/apps/{{BITABLE_APP_TOKEN}}/tables/{{BITABLE_TABLE_ID}}/records"
+      }
+    },
+    {
+      "name": "Reply",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "parameters": {
+        "method": "POST",
+        "url": "=https://open.larksuite.com/open-apis/im/v1/messages/{{ $json.message_id }}/reply"
+      }
+    }
+  ],
+  "connections": {
+    "Receive": { "main": [[{ "node": "Remember Id", "type": "main", "index": 0 }]] },
+    "Remember Id": { "main": [[{ "node": "Create Record", "type": "main", "index": 0 }]] },
+    "Create Record": { "main": [[{ "node": "Reply", "type": "main", "index": 0 }]] }
+  }
+}

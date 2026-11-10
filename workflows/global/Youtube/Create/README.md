@@ -24,6 +24,8 @@ Corresponding file: `youtube-create.redacted.json`
 
 ## Notes
 
+`YouTube Normalize Data` connects to `Merge All Platform Data`, then the batch write (`/records/batch_create`). That write sets `onError` to `continueRegularOutput`, so a failed batch can continue on the success output. Replay dedup is unverified. See [import preflight](../../../../docs/import-preflight.md).
+
 The `Config` node in this standalone version is already narrowed to YouTube-only input.
 
 After import, confirm whether you want to collect channel, video, or Shorts data and adjust the Apify input accordingly.

@@ -5,4 +5,5 @@
 - Adding or re-exporting a workflow: redact first (only `{{UPPER_SNAKE}}` placeholders), then add or update its `workflow.manifest.json` ([schema](./schema/manifest.schema.json)). CI fails on drift.
 - Never commit real credential ids, tokens, tenant URLs, webhook ids or emails. The checker prints rule + path only.
 - Keep `settings.availableInMCP` false in exports; exposure is the instance owner's decision.
-- Seams: `findLeaks` (scripts/check-redaction.mjs), `validateManifest`/`loadManifests` (scripts/manifests.mjs).
+- Seams: `findLeaks` (scripts/check-redaction.mjs), `validateManifest`/`loadManifests` (scripts/manifests.mjs), `preflightWorkflow` (scripts/preflight.mjs).
+- Import preflight: `npm run preflight`. Offline structural check plus an unverified recovery label. It does not run n8n or call external APIs. Node typeVersion compatibility stays unknown. Exit 0 is not a production certification. See [docs/import-preflight.md](./docs/import-preflight.md).

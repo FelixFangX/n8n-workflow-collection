@@ -17,6 +17,10 @@ Corresponding file: `social-media-effectiveness-tracker.redacted.json`
 7. Map the result back to the original records
 8. Update Bitable by `record_id`
 
+## Replay and partial failure
+
+The manual trigger has no external event id in this export. Each platform PUT uses the row's `record_id`, so a repeat addresses that same row when the id is stable. That is not exactly-once: a retry cannot see whether the first PUT landed. Apify nodes set `retryOnFail` (`maxTries` 2), so a retry can start another actor run. An actor run and the Bitable write can fail separately. No durable dedup store is configured. `npm run preflight` labels this `unverified`. See [import preflight](../../../../docs/import-preflight.md).
+
 ## Dependencies
 
 - n8n

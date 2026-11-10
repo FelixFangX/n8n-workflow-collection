@@ -1,0 +1,10 @@
+{
+  "name": "Synthetic unreachable write",
+  "nodes": [
+    { "name": "Manual Trigger", "type": "n8n-nodes-base.manualTrigger", "typeVersion": 1, "parameters": {} },
+    { "name": "Create Record", "type": "n8n-nodes-base.httpRequest", "typeVersion": 4.2, "parameters": { "method": "POST", "url": "https://open.larksuite.com/open-apis/bitable/v1/apps/{{BITABLE_APP_TOKEN}}/tables/{{BITABLE_TABLE_ID}}/records" } }
+  ],
+  "connections": {
+    "Create Record": { "main": [[{ "node": "Missing Next", "type": "main", "index": 0 }]] }
+  }
+}

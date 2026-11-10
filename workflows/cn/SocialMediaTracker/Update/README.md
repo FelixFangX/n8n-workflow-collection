@@ -65,3 +65,7 @@
 
 ### 3. 适合放定时任务吗？
 可以，但建议先手动跑通一次，再挂 cron。
+
+## 重放与部分失败
+
+手动触发的导出里没有外部事件 id。更新节点按 `record_id` PUT 同一行；id 稳定时重复执行仍打到同一条记录，但这不是 exactly-once，离线检查看不到第一次 PUT 是否已经成功。Apify 节点设置了 `retryOnFail`（`maxTries` 2），重试可能再跑一次 actor。抓取成功而写入失败，或相反，都可能发生。这里没有持久去重存储。`npm run preflight` 标为 unverified。说明见 [import preflight](../../../../docs/import-preflight.md)。

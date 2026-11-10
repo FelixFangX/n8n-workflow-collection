@@ -79,3 +79,7 @@ So the workflow can be shared publicly without exposing production configuration
 
 ### Is it ready for production as-is?
 Use a test table and test chat first, then move to production once the flow is validated.
+
+## Replay and partial failure
+
+`message_id` is copied into the record payload and the reply URL. No node looks up an existing Bitable row by `message_id` before `Create Bitable Record`. A second delivery can create another row. If the record POST succeeds and `Reply to Lark Message` fails, the row remains and the chat can stay unanswered. This export does not configure a durable dedup store. `npm run preflight` reports that as `unverified` and does not claim exactly-once. See [import preflight](../../../../docs/import-preflight.md).

@@ -1,0 +1,10 @@
+{
+  "name": "Synthetic unknown node version",
+  "nodes": [
+    { "name": "Manual Trigger", "type": "n8n-nodes-base.manualTrigger", "typeVersion": 1, "parameters": {} },
+    { "name": "Future HTTP", "type": "n8n-nodes-base.httpRequest", "typeVersion": 99, "parameters": { "method": "GET", "url": "https://open.larksuite.com/open-apis/bitable/v1/apps/{{BITABLE_APP_TOKEN}}/tables" } }
+  ],
+  "connections": {
+    "Manual Trigger": { "main": [[{ "node": "Future HTTP", "type": "main", "index": 0 }]] }
+  }
+}

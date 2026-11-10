@@ -10,6 +10,7 @@
     "check:redaction": "node scripts/check-redaction.mjs workflows",
     "check:manifests": "node scripts/manifests.mjs check",
     "manifests": "node scripts/manifests.mjs list",
-    "check:workflows": "node scripts/check-workflows.mjs workflows"
+    "check:workflows": "node scripts/check-workflows.mjs workflows",
+    "preflight": "node scripts/preflight.mjs workflows"
   }
 }

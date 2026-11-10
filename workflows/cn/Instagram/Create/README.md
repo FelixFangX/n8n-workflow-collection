@@ -44,4 +44,6 @@
 
 ## 说明
 
+`Instagram 数据标准化` 连接到 `合并所有平台数据`，再进入批量写入（`/records/batch_create`）。该写入节点的 `onError` 是 `continueRegularOutput`，失败的批次仍可能走成功输出。重放去重未验证。见 [import preflight](../../../../docs/import-preflight.md)。
+
 这是从总流程里裁出来的独立版本，方便单独维护 Instagram 数据采集。

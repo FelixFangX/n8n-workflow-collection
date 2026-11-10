@@ -76,6 +76,14 @@ npm run check:workflows   # JSON parses, unique node names, connections and $('N
 
 Run the check before committing any new export. Only `{{UPPER_SNAKE}}` placeholders are allowed where credentials, tokens, tenant links, webhook IDs or emails would go.
 
+## Import preflight
+
+```bash
+npm run preflight
+```
+
+This reads the exports locally. It does not import them into n8n or call Lark, OpenAI, Apify, or Bitable. Structural problems (broken connections, unreachable nodes, credential ids that are not `{{UPPER_SNAKE}}`, secret literals) fail the command. Node `typeVersion` compatibility and external API behavior are `not-run`. Replay and partial writes are labeled `unverified`, not exactly-once. Exit 0 is not a production certification. Details: [docs/import-preflight.md](./docs/import-preflight.md).
+
 ## License
 
 [MIT](./LICENSE)

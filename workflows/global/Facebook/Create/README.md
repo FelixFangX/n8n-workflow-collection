@@ -23,6 +23,8 @@ Corresponding file: `facebook-create.redacted.json`
 
 ## Notes
 
+`Facebook Normalize Data` connects to `Merge All Platform Data`, then the batch write (`/records/batch_create`). That write sets `onError` to `continueRegularOutput`, so a failed batch can continue on the success output. Replay dedup is unverified. See [import preflight](../../../../docs/import-preflight.md).
+
 The standalone `Config` node is already narrowed to Facebook-only input.
 
 Keep only Facebook links in `profileUrls` to avoid mixing platforms.

@@ -44,4 +44,6 @@ In the `Config` node, keep only Instagram links inside `profileUrls`. This stand
 
 ## Notes
 
+`Instagram Normalize Data` connects to `Merge All Platform Data`, then the batch write (`/records/batch_create`). That write sets `onError` to `continueRegularOutput`, so a failed batch can continue on the success output. Replay dedup is unverified. See [import preflight](../../../../docs/import-preflight.md).
+
 This is the Instagram-only version split out from the main workflow so it can be maintained and reused independently.

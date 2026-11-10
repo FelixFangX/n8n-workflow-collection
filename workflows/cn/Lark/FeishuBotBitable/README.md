@@ -79,3 +79,7 @@
 
 ### 3. 适合直接用于生产吗？
 建议先在测试表中跑通，再接正式群和正式表。
+
+## 重放与部分失败
+
+`message_id` 会进入记录字段和回复地址，但在 `新增多维表格记录` 之前没有按 `message_id` 查询已有行。同一条消息再投递一次可能再插入一行。记录创建成功而 `回复飞书消息` 失败时，行会留下，聊天里可能没有回复。这个导出没有配置持久去重存储。`npm run preflight` 会标成 unverified，不会声称 exactly-once。说明见 [import preflight](../../../../docs/import-preflight.md)。

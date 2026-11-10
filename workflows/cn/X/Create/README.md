@@ -26,4 +26,6 @@
 
 ## 说明
 
+`X/Twitter 数据标准化` 连接到 `合并所有平台数据`，再进入批量写入（`/records/batch_create`）。该写入节点的 `onError` 是 `continueRegularOutput`，失败的批次仍可能走成功输出。重放去重未验证。见 [import preflight](../../../../docs/import-preflight.md)。
+
 Create 版本会利用年月信息构造 X 的搜索条件，适合按月做归档采集。
